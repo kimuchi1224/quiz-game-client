@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>リアルタイム早押しクイズ</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        #quiz-text { font-size: 24px; font-weight: bold; min-height: 80px; border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; background: #fafafa; }
+        #buzz-btn { width: 100%; padding: 20px; font-size: 28px; background: #ff4d4f; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        #buzz-btn:disabled { background: #cccccc; cursor: not-allowed; }
+        .panel { border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>オンライン早押しクイズ</h1>
+
+    <div id="lobby-view" class="panel">
+        <h3>ゲーム設定 (ホスト用)</h3>
+        ジャンル: <input type="text" id="genre" value="一般">
+        難易度: <select id="difficulty"><option>初級</option><option selected>中級</option><option>上級</option></select>
+        問題数: <input type="number" id="count" value="5" min="1" max="20" style="width: 50px;">
+        <button id="save-config-btn">設定反映</button>
+        <hr>
+        <button id="start-btn" style="padding: 10px 20px; font-size: 18px; background: #52c41a; color: white; border:none; border-radius:4px;">ゲーム開始</button>
+    </div>
+
+    <div class="panel">
+        <h3>参加プレイヤー / スコア</h3>
+        <ul id="player-list"></ul>
+    </div>
+
+    <div id="quiz-view" class="panel hidden">
+        <h2 id="quiz-number">第 1 問</h2>
+        <div id="quiz-text">ここに問題文が流れます...</div>
+        
+        <button id="buzz-btn">PUSH!!</button>
+
+        <div id="answer-input-area" class="hidden" style="margin-top: 15px;">
+            <p id="buzzer-announcement"></p>
+            <input type="text" id="answer-field" placeholder="答えを入力してEnter" style="width: 70%; padding: 10px; font-size: 16px;">
+            <button id="submit-btn" style="padding: 10px;">送信</button>
+            <div id="timer-display" style="font-size: 20px; color: red; font-weight: bold; margin-top: 5px;"></div>
+        </div>
+    </div>
+
+    <div id="result-view" class="panel hidden" style="background: #e6f7ff;">
+        <h3>結果発表</h3>
+        <p id="round-status" style="font-size: 20px; font-weight: bold;"></p>
+        <p><strong>あなたの入力:</strong> <span id="user-input-ans"></span></p>
+        <p><strong>正解:</strong> <span id="correct-ans"></span></p>
+        <p><strong>解説:</strong> <span id="quiz-exp"></span></p>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    // ローカル開発時は localhost、本番環境では Render のURLに自動で切り替える設定
+    const BACKEND_URL = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000'
+        : 'https://あなたのアプリ名.onrender.com'; // Renderで発行されたURL
+
+    const socket = io(BACKEND_URL);
+
+    // DOM要素の取得
+    const lobbyView = document.getElementById('lobby-view');
+    const quizView = document.getElementById('quiz-view');
+    const resultView = document.getElementById('result-view');
+    const playerList = document.getElementById('player-list');
+    const quizText = document.getElementById('quiz-text');
+    const buzzBtn = document.getElementById('buzz-btn');
+    const answerInputArea = document.getElementById('answer-input-area');
+    const answerField = document.getElementById('answer-field');
+    const submitBtn = document.getElementById('submit-btn');
+    const buzzerAnnouncement = document.getElementById('buzzer-announcement');
+    const timerDisplay = document.getElementById('timer-display');
+
+    // イベントリスナー設定
+    document.getElementById('save-config-btn').onclick = () => {
+        socket.emit('set-config', {
+            genre: document.getElementById('genre').value,
+            difficulty: document.getElementById('difficulty').value,
+            count: parseInt(document.getElementById('count').value)
+        });
+    };
+
+    document.getElementById('start-btn').onclick = () => socket.emit('game-start');
+    buzzBtn.onclick = () => socket.emit('buzz');
+    
+    const sendAnswer = () => {
+        socket.emit('submit-answer', answerField.value);
+        answerField.value = "";
+        answerInputArea.classList.add('hidden');
+    };
+    submitBtn.onclick = sendAnswer;
+    answerField.onkeydown = (e) => { if(e.key === 'Enter') sendAnswer(); };
+
+    // Socket.IO 受信イベント
+    socket.on('room-update', (state) => {
+        // プレイヤーリストの更新
+        playerList.innerHTML = Object.values(state.players)
+            .map(p => `<li><strong>${p.name}</strong>: ${p.score} 点</li>`).join('');
+
+        // 表示ビューの切り替え制御
+        if (state.status === 'LOBBY') {
+            lobbyView.classList.remove('hidden');
+            quizView.classList.add('hidden');
+            resultView.classList.add('hidden');
+        } else {
+            lobbyView.classList.add('hidden');
+            quizView.classList.remove('hidden');
+        }
+
+        // 入力値の同期
+        document.getElementById('genre').value = state.config.genre;
+        document.getElementById('difficulty').value = state.config.difficulty;
+        document.getElementById('count').value = state.config.count;
+    });
+
+    socket.on('quiz-start', (data) => {
+        document.getElementById('quiz-number').innerText = `第 ${data.index + 1} 問`;
+        resultView.classList.add('hidden');
+        buzzBtn.disabled = false;
+        answerInputArea.classList.add('hidden');
+        quizText.innerText = "";
+    });
+
+    socket.on('quiz-text-chunk', (data) => {
+        quizText.innerText = data.text; // 1文字ずつ送られてくるテキストを更新
+    });
+
+    socket.on('buzzed', (data) => {
+        buzzBtn.disabled = true;
+        answerInputArea.classList.remove('hidden');
+        
+        if (data.playerId === socket.id) {
+            buzzerAnnouncement.innerText = "あなたが解答権を獲得しました！";
+            answerField.disabled = false;
+            answerField.focus();
+            submitBtn.disabled = false;
+        } else {
+            buzzerAnnouncement.innerText = `${data.name} が解答中...`;
+            answerField.disabled = true;
+            submitBtn.disabled = true;
+        }
+    });
+
+    socket.on('answer-timer', (countdown) => {
+        timerDisplay.innerText = `残り時間: ${countdown}秒`;
+    });
+
+    socket.on('quiz-round-result', (data) => {
+        resultView.classList.remove('hidden');
+        document.getElementById('round-status').innerText = 
+            `${data.answeredPlayer} の回答は 【${data.isCorrect ? '正解 ◯' : '不正解 ✕'}】`;
+        document.getElementById('user-input-ans').innerText = data.answerText || "(タイムアウト)";
+        document.getElementById('correct-ans').innerText = data.correctAnswer;
+        document.getElementById('quiz-exp').innerText = data.explanation;
+    });
+
+    socket.on('game-over', (players) => {
+        alert("ゲーム終了！最終スコアを確認してください。");
+    });
+</script>
+</body>
+</html>
