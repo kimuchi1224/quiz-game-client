@@ -69,7 +69,7 @@
     // 接続先の自動判定 (Render用URLがある場合はここに貼り付け)
     const BACKEND_URL = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
         ? 'http://localhost:3000'
-        : location.origin; 
+        : 'https://my-quiz-server-5rtw.onrender.com'; 
 
     // 初期状態では未接続。名前を入力したら接続する
     let socket = null;
