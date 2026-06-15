@@ -6,11 +6,14 @@
     <style>
         body { font-family: sans-serif; background: #f0f2f5; margin: 20px; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .hidden { display: none !important; } /* 強制的に非表示にする */
+        .hidden { display: none !important; }
         #quiz-text { font-size: 24px; font-weight: bold; min-height: 80px; border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; background: #fafafa; }
         #buzz-btn { width: 100%; padding: 20px; font-size: 28px; background: #ff4d4f; color: white; border: none; border-radius: 8px; cursor: pointer; }
         #buzz-btn:disabled { background: #cccccc; cursor: not-allowed; }
         .panel { border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
@@ -38,7 +41,6 @@
         <div id="quiz-view" class="panel hidden">
             <h2 id="quiz-number">第 1 問</h2>
             <div id="quiz-text">ここに問題文が流れます...</div>
-            
             <button id="buzz-btn">PUSH!!</button>
 
             <div id="answer-input-area" class="hidden" style="margin-top: 15px;">
@@ -58,29 +60,37 @@
         </div>
 
         <div class="panel">
-            <h3>参加プレイヤー / スコア</h3>
-            <ul id="player-list"></ul>
+            <h3>参加プレイヤー情報</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>プレイヤー名</th>
+                        <th>今ゲームの点数</th>
+                        <th>総合スコア（通算）</th>
+                    </tr>
+                </thead>
+                <tbody id="player-table-body">
+                    </tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-    // 接続先の自動判定 (Render用URLがある場合はここに貼り付け)
+    // 指定された Render.com の固定URLをセット
     const BACKEND_URL = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
         ? 'http://localhost:3000'
         : 'https://my-quiz-server-5rtw.onrender.com'; 
 
-    // 初期状態では未接続。名前を入力したら接続する
     let socket = null;
 
-    // DOM要素の取得
     const welcomeView = document.getElementById('welcome-view');
     const gameArea = document.getElementById('game-area');
     const lobbyView = document.getElementById('lobby-view');
     const quizView = document.getElementById('quiz-view');
     const resultView = document.getElementById('result-view');
-    const playerList = document.getElementById('player-list');
+    const playerTableBody = document.getElementById('player-table-body');
     const quizText = document.getElementById('quiz-text');
     const buzzBtn = document.getElementById('buzz-btn');
     const answerInputArea = document.getElementById('answer-input-area');
@@ -89,52 +99,43 @@
     const buzzerAnnouncement = document.getElementById('buzzer-announcement');
     const timerDisplay = document.getElementById('timer-display');
 
-    // 1. 入室ボタンを押した時の処理
     document.getElementById('join-btn').onclick = () => {
         const name = document.getElementById('nickname-field').value.trim();
-        if (!name) {
-            alert('ニックネームを入力してください。');
-            return;
-        }
+        if (!name) { alert('ニックネームを入力してください。'); return; }
 
-        // サーバーに接続し、名前を送信
         socket = io(BACKEND_URL, { query: { name: name } });
         setupSocketEvents();
 
-        // 画面を Welcome から ゲームエリア へ切り替え
         welcomeView.classList.add('hidden');
         gameArea.classList.remove('hidden');
     };
 
-    // Socket.IOのイベント群を登録する関数
     function setupSocketEvents() {
-        // ルーム状態が更新された（最重要：シームレスな画面遷移ロジック）
         socket.on('room-update', (state) => {
-            // プレイヤーリストの更新
-            playerList.innerHTML = Object.values(state.players)
-                .map(p => `<li><strong>${p.name}</strong>: ${p.score} 点</li>`).join('');
+            // スコアボード（テーブル）の2軸更新
+            playerTableBody.innerHTML = Object.values(state.players)
+                .map(p => `
+                    <tr>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.currentScore} 点</td>
+                        <td>${p.totalScore} 点</td>
+                    </tr>
+                `).join('');
 
-            // 設定値の同期
             document.getElementById('genre').value = state.config.genre;
             document.getElementById('difficulty').value = state.config.difficulty;
             document.getElementById('count').value = state.config.count;
 
-            // 状態（status）に応じた表示の完全切り替え
             if (state.status === 'LOBBY') {
                 lobbyView.classList.remove('hidden');
                 quizView.classList.add('hidden');
                 resultView.classList.add('hidden');
-            } else if (state.status === 'QUIZ_TEXT') {
+            } else if (state.status === 'QUIZ_TEXT' || state.status === 'QUIZ_ANSWER') {
                 lobbyView.classList.add('hidden');
                 quizView.classList.remove('hidden');
-                // テキスト配信中は結果画面を隠す
                 resultView.classList.add('hidden'); 
-            } else if (state.status === 'QUIZ_ANSWER') {
-                lobbyView.classList.add('hidden');
-                quizView.classList.remove('hidden');
             } else if (state.status === 'QUIZ_RESULT') {
                 lobbyView.classList.add('hidden');
-                // クイズ画面は残しつつ、結果（解説）を出す
                 quizView.classList.remove('hidden');
                 resultView.classList.remove('hidden');
             }
@@ -172,7 +173,6 @@
         });
 
         socket.on('quiz-round-result', (data) => {
-            // 解答権が移ったら入力エリアは一律閉じる
             answerInputArea.classList.add('hidden'); 
             document.getElementById('round-status').innerText = 
                 `${data.answeredPlayer} の回答は 【${data.isCorrect ? '正解 ◯' : '不正解 ✕'}】`;
@@ -186,7 +186,6 @@
         });
     }
 
-    // ゲーム操作系のイベント送信
     document.getElementById('save-config-btn').onclick = () => {
         socket.emit('set-config', {
             genre: document.getElementById('genre').value,
