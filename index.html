@@ -143,9 +143,41 @@
         });
 
         socket.on('room-update', (state) => {
+            // プレイヤーリストの描画（ホストの人には王冠マーク👑などをつけると分かりやすい！）
             playerTableBody.innerHTML = Object.values(state.players)
-                .map(p => `<tr><td><strong>${p.name}</strong></td><td>${p.currentScore} 点</td><td>${p.totalScore} 点</td></tr>`).join('');
+                .map(p => {
+                    const isHost = p.id === state.hostId;
+                    return `
+                        <tr>
+                            <td><strong>${p.name} ${isHost ? '👑 (ホスト)' : ''}</strong></td>
+                            <td>${p.currentScore} 点</td>
+                            <td>${p.totalScore} 点</td>
+                        </tr>
+                    `;
+                }).join('');
 
+            // ★追加：自分がホストかどうかの判定
+            const amIHost = socket.id === state.hostId;
+
+            // ホストではない場合、設定フォームやボタンを操作できないようにする
+            document.getElementById('genre').disabled = !amIHost;
+            document.getElementById('difficulty').disabled = !amIHost;
+            document.getElementById('count').disabled = !amIHost;
+            document.getElementById('continueOnWrong').disabled = !amIHost;
+            document.getElementById('answerLimit').disabled = !amIHost;
+            document.getElementById('thinkingLimit').disabled = !amIHost;
+            document.getElementById('plusScore').disabled = !amIHost;
+            document.getElementById('minusScore').disabled = !amIHost;
+    
+            // 設定反映ボタンとゲーム開始ボタンの表示・非表示切り替え
+            if (amIHost) {
+                document.getElementById('save-config-btn').classList.remove('hidden');
+                document.getElementById('start-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('save-config-btn').classList.add('hidden');
+                document.getElementById('start-btn').classList.add('hidden');
+            }
+            
             // 設定フォームの同期
             document.getElementById('genre').value = state.config.genre;
             document.getElementById('difficulty').value = state.config.difficulty;
