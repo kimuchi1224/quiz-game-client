@@ -67,6 +67,9 @@
         <div id="result-view" class="panel hidden" style="background: #e6f7ff;">
             <h3>結果発表</h3>
             <p id="round-status" style="font-size: 20px; font-weight: bold;"></p>
+            <p style="background: #fff; padding: 10px; border-left: 5px solid #1890ff; border-radius: 4px;">
+                <strong>問題の全文:</strong> <br><span id="quiz-full-question" style="font-size: 16px; color: #333;"></span>
+            </p>
             <p><strong>あなたの入力:</strong> <span id="user-input-ans"></span></p>
             <p><strong>正解:</strong> <span id="correct-ans"></span></p>
             <p><strong>解説:</strong> <span id="quiz-exp"></span></p>
@@ -111,7 +114,9 @@
     const timerDisplay = document.getElementById('timer-display');
     const confirmBtn = document.getElementById('confirm-btn');
     const confirmStatus = document.getElementById('confirm-status');
-
+    const thinkingTimerDisplay = document.getElementById('thinking-timer-display');
+    const quizFullQuestion = document.getElementById('quiz-full-question');
+    
     function showToast(msg) {
         toastArea.innerText = msg;
         toastArea.classList.remove('hidden');
@@ -209,18 +214,25 @@
             document.getElementById('quiz-number').innerText = `第 ${data.index + 1} 問`;
             buzzBtn.disabled = false;
             answerInputArea.classList.add('hidden');
-            confirmBtn.disabled = false; // 次の確認用に有効化
+            thinkingTimerDisplay.innerText = ""; // カウントダウン表示をリセット
+            confirmBtn.disabled = false;
             confirmBtn.innerText = "次の問題へ進む（確認）";
             confirmStatus.innerText = "";
             quizText.innerText = "";
+            quizFullQuestion.innerText = ""; // 全文をリセット
         });
 
         socket.on('quiz-text-chunk', (data) => {
             quizText.innerText = data.text;
         });
 
+        socket.on('thinking-timer', (countdown) => {
+            thinkingTimerDisplay.innerText = `🤔 全員思考中... 残り ${countdown} 秒！`;
+        });
+        
         socket.on('buzzed', (data) => {
             buzzBtn.disabled = true;
+            thinkingTimerDisplay.innerText = ""; // 消去
             answerInputArea.classList.remove('hidden');
             
             if (data.playerId === socket.id) {
@@ -241,8 +253,10 @@
 
         socket.on('quiz-round-result', (data) => {
             answerInputArea.classList.add('hidden'); 
+            thinkingTimerDisplay.innerText = ""; // 念のためここでも消去
             document.getElementById('round-status').innerText = 
                 `${data.answeredPlayer} の回答は 【${data.isCorrect ? '正解 ◯' : '不正解 ✕'}】`;
+            quizFullQuestion.innerText = data.fullQuestion;
             document.getElementById('user-input-ans').innerText = data.answerText || "(タイムアウト)";
             document.getElementById('correct-ans').innerText = data.correctAnswer;
             document.getElementById('quiz-exp').innerText = data.explanation;
