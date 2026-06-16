@@ -14,11 +14,16 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
+        .toast-msg { background: #fffbe6; border: 1px solid #ffe58f; padding: 10px; margin-bottom: 10px; border-radius: 4px; font-weight: bold; color: #d46b08; }
+        #confirm-btn { padding: 15px 30px; font-size: 20px; background: #2f54eb; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 15px; }
+        #confirm-btn:disabled { background: #f5f5f5; color: #rgba(0,0,0,.25); border: 1px solid #d9d9d9; cursor: not-allowed; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>オンライン早押しクイズ</h1>
+
+    <div id="toast-area" class="toast-msg hidden"></div>
 
     <div id="welcome-view" class="panel">
         <h3>ニックネームを入力して入室してください</h3>
@@ -32,8 +37,16 @@
             <h3>ゲーム設定 (ホスト用)</h3>
             ジャンル: <input type="text" id="genre" value="一般"><br><br>
             難易度: <select id="difficulty"><option>初級</option><option selected>中級</option><option>上級</option></select><br><br>
-            問題数: <input type="number" id="count" value="5" min="1" max="20" style="width: 50px;"><br><br>
-            <button id="save-config-btn">設定反映</button>
+            問題数: <input type="number" id="count" value="5" style="width: 50px;"><br><br>
+            
+            <strong>【拡張ルール設定】</strong><br>
+            誤答時のルール: <select id="continueOnWrong"><option value="true">他の人で早押し続行</option><option value="false">即次の問題へ</option></select><br><br>
+            解答制限時間: <input type="number" id="answerLimit" value="10" style="width: 50px;"> 秒<br><br>
+            読み上げ後の猶予時間: <input type="number" id="thinkingLimit" value="7" style="width: 50px;"> 秒<br><br>
+            正解時の加点: <input type="number" id="plusScore" value="10" style="width: 50px;"> 点<br>
+            誤答時の減点: <input type="number" id="minusScore" value="5" style="width: 50px;"> 点<br><br>
+
+            <button id="save-config-btn" style="padding: 5px 15px;">設定反映</button>
             <hr>
             <button id="start-btn" style="padding: 10px 20px; font-size: 18px; background: #52c41a; color: white; border:none; border-radius:4px; cursor:pointer;">ゲーム開始</button>
         </div>
@@ -57,20 +70,18 @@
             <p><strong>あなたの入力:</strong> <span id="user-input-ans"></span></p>
             <p><strong>正解:</strong> <span id="correct-ans"></span></p>
             <p><strong>解説:</strong> <span id="quiz-exp"></span></p>
+            
+            <button id="confirm-btn">次の問題へ進む（確認）</button>
+            <p id="confirm-status" style="font-size: 14px; color: #555; margin-top: 5px;"></p>
         </div>
 
         <div class="panel">
             <h3>参加プレイヤー情報</h3>
             <table>
                 <thead>
-                    <tr>
-                        <th>プレイヤー名</th>
-                        <th>今ゲームの点数</th>
-                        <th>総合スコア（通算）</th>
-                    </tr>
+                    <tr><th>プレイヤー名</th><th>今ゲームの点数</th><th>総合スコア（通算）</th></tr>
                 </thead>
-                <tbody id="player-table-body">
-                    </tbody>
+                <tbody id="player-table-body"></tbody>
             </table>
         </div>
     </div>
@@ -78,13 +89,13 @@
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-    // 指定された Render.com の固定URLをセット
     const BACKEND_URL = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
         ? 'http://localhost:3000'
         : 'https://my-quiz-server-5rtw.onrender.com'; 
 
     let socket = null;
 
+    const toastArea = document.getElementById('toast-area');
     const welcomeView = document.getElementById('welcome-view');
     const gameArea = document.getElementById('game-area');
     const lobbyView = document.getElementById('lobby-view');
@@ -98,6 +109,16 @@
     const submitBtn = document.getElementById('submit-btn');
     const buzzerAnnouncement = document.getElementById('buzzer-announcement');
     const timerDisplay = document.getElementById('timer-display');
+    const confirmBtn = document.getElementById('confirm-btn');
+    const confirmStatus = document.getElementById('confirm-status');
+
+    function showToast(msg) {
+        toastArea.innerText = msg;
+        toastArea.classList.remove('hidden');
+    }
+    function hideToast() {
+        toastArea.classList.add('hidden');
+    }
 
     document.getElementById('join-btn').onclick = () => {
         const name = document.getElementById('nickname-field').value.trim();
@@ -111,29 +132,40 @@
     };
 
     function setupSocketEvents() {
-        socket.on('room-update', (state) => {
-            // スコアボード（テーブル）の2軸更新
-            playerTableBody.innerHTML = Object.values(state.players)
-                .map(p => `
-                    <tr>
-                        <td><strong>${p.name}</strong></td>
-                        <td>${p.currentScore} 点</td>
-                        <td>${p.totalScore} 点</td>
-                    </tr>
-                `).join('');
+        // 設定保存メッセージの受信
+        socket.on('config-saved', (msg) => {
+            alert(msg); // 確実に入力者に伝えるためアラート形式、またはshowToast
+        });
 
+        // クイズ自動生成中のメッセージ受信
+        socket.on('generating-quizzes', (msg) => {
+            showToast(msg);
+        });
+
+        socket.on('room-update', (state) => {
+            playerTableBody.innerHTML = Object.values(state.players)
+                .map(p => `<tr><td><strong>${p.name}</strong></td><td>${p.currentScore} 点</td><td>${p.totalScore} 点</td></tr>`).join('');
+
+            // 設定フォームの同期
             document.getElementById('genre').value = state.config.genre;
             document.getElementById('difficulty').value = state.config.difficulty;
             document.getElementById('count').value = state.config.count;
+            document.getElementById('continueOnWrong').value = state.config.continueOnWrong.toString();
+            document.getElementById('answerLimit').value = state.config.answerLimit;
+            document.getElementById('thinkingLimit').value = state.config.thinkingLimit;
+            document.getElementById('plusScore').value = state.config.plusScore;
+            document.getElementById('minusScore').value = state.config.minusScore;
 
             if (state.status === 'LOBBY') {
                 lobbyView.classList.remove('hidden');
                 quizView.classList.add('hidden');
                 resultView.classList.add('hidden');
+                hideToast();
             } else if (state.status === 'QUIZ_TEXT' || state.status === 'QUIZ_ANSWER') {
                 lobbyView.classList.add('hidden');
                 quizView.classList.remove('hidden');
-                resultView.classList.add('hidden'); 
+                resultView.classList.add('hidden');
+                hideToast();
             } else if (state.status === 'QUIZ_RESULT') {
                 lobbyView.classList.add('hidden');
                 quizView.classList.remove('hidden');
@@ -145,6 +177,9 @@
             document.getElementById('quiz-number').innerText = `第 ${data.index + 1} 問`;
             buzzBtn.disabled = false;
             answerInputArea.classList.add('hidden');
+            confirmBtn.disabled = false; // 次の確認用に有効化
+            confirmBtn.innerText = "次の問題へ進む（確認）";
+            confirmStatus.innerText = "";
             quizText.innerText = "";
         });
 
@@ -181,22 +216,41 @@
             document.getElementById('quiz-exp').innerText = data.explanation;
         });
 
+        // 誰かが確認ボタンを押したときの同期
+        socket.on('confirm-update', (confirmedPlayers) => {
+            const confirmedCount = Object.keys(confirmedPlayers).length;
+            confirmStatus.innerText = `現在 ${confirmedCount} 人が確認済み...`;
+        });
+
         socket.on('game-over', (players) => {
-            alert("ゲーム終了！最終スコアを確認してください。");
+            alert("全問終了！最終スコアを確認してください。");
         });
     }
 
+    // 設定反映
     document.getElementById('save-config-btn').onclick = () => {
         socket.emit('set-config', {
             genre: document.getElementById('genre').value,
             difficulty: document.getElementById('difficulty').value,
-            count: parseInt(document.getElementById('count').value)
+            count: parseInt(document.getElementById('count').value),
+            continueOnWrong: document.getElementById('continueOnWrong').value === 'true',
+            answerLimit: parseInt(document.getElementById('answerLimit').value),
+            thinkingLimit: parseInt(document.getElementById('thinkingLimit').value),
+            plusScore: parseInt(document.getElementById('plusScore').value),
+            minusScore: parseInt(document.getElementById('minusScore').value)
         });
     };
 
     document.getElementById('start-btn').onclick = () => socket.emit('game-start');
     buzzBtn.onclick = () => socket.emit('buzz');
     
+    // 確認ボタン
+    confirmBtn.onclick = () => {
+        socket.emit('confirm-next');
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = "他の参加者の確認を待っています...";
+    };
+
     const sendAnswer = () => {
         socket.emit('submit-answer', answerField.value);
         answerField.value = "";
