@@ -236,7 +236,7 @@
 
     function setupSocketEvents() {
         // ★修正：「設定反映」ボタン通知をトーストで100%目立たせる
-        socket.on('config-saved', (msg) => { showToast(msg); setTimeout(hideToast, 2500); });
+        socket.on('config-saved', (msg) => { showToast(msg); /*setTimeout(hideToast, 2500);*/ });
         socket.on('generating-quizzes', (msg) => { showToast(msg); });
         socket.on('host-override-notice', (msg) => { showToast(msg); setTimeout(hideToast, 4000); });
 
