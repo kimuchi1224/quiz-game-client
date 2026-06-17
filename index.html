@@ -204,9 +204,13 @@
 
     function showToast(msg) { 
         toastArea.innerText = msg; 
+        toastArea.classList.remove('hidden');
         toastArea.style.display = 'block'; 
     }
-    function hideToast() { toastArea.style.display = 'none'; }
+    function hideToast() { 
+        toastArea.style.display = 'none'; 
+        toastArea.classList.add('hidden');
+    }
     
     function triggerBuzzerFlash() {
         screenFlash.className = ""; void screenFlash.offsetWidth; screenFlash.classList.add('flash-active');
