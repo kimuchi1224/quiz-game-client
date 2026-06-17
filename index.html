@@ -43,7 +43,6 @@
 
         .hidden { display: none !important; }
 
-        /* カード・パネルデザインの刷新 */
         .card { 
             background: var(--card-bg); 
             padding: 24px; 
@@ -54,55 +53,18 @@
             transition: all 0.3s ease;
         }
 
-        /* フォーム周辺のスマート化 */
-        .form-group {
-            margin-bottom: 16px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 6px;
-            font-size: 14px;
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
+        /* フォーム周辺 */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         input[type="text"], input[type="number"], select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #d9d9d9;
-            border-radius: 6px;
-            font-size: 15px;
-            box-sizing: border-box;
-            transition: all 0.2s;
+            width: 100%; padding: 10px 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 15px; box-sizing: border-box; transition: all 0.2s;
         }
-        input:focus, select:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(47, 84, 235, 0.2);
-        }
-        input:disabled, select:disabled {
-            background: #f5f5f5;
-            color: var(--text-muted);
-            cursor: not-allowed;
-        }
+        input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(47, 84, 235, 0.2); }
+        input:disabled, select:disabled { background: #f5f5f5; color: var(--text-muted); cursor: not-allowed; }
 
-        /* ボタン類のスタイリッシュ化 */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 20px;
-            font-size: 15px;
-            font-weight: 600;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            width: 100%;
-        }
+        /* ボタン */
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; font-size: 15px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; width: 100%; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-hover); }
         .btn-success { background: var(--success); color: white; font-size: 18px; padding: 14px; }
@@ -110,72 +72,37 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-warning { background: var(--warning); color: white; }
 
-        /* クイズ画面の大胆な調整 */
-        #quiz-number {
-            font-size: 16px;
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin: 0 0 8px 0;
-            text-align: center;
-        }
+        /* クイズ画面 */
+        #quiz-number { font-size: 16px; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px 0; text-align: center; }
+        
+        /* ★修正：読みやすさ最優先の左寄せ配置（余白をもたせてスタイリッシュに） */
         #quiz-text { 
             font-size: 22px; 
             font-weight: 700; 
             min-height: 100px; 
-            padding: 20px; 
+            padding: 24px; 
             margin-bottom: 20px; 
             background: #fafafa; 
             border-radius: 8px;
             border: 1px solid #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
+            text-align: left; /* 左寄せ */
+            box-sizing: border-box;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
 
         /* 巨大早押しボタン */
         #buzz-btn { 
-            width: 100%; 
-            padding: 24px; 
-            font-size: 32px; 
-            background: linear-gradient(135deg, #ff7875, #ff4d4f);
-            color: white; 
-            border: none; 
-            border-radius: var(--radius); 
-            cursor: pointer; 
-            font-weight: 800;
-            box-shadow: 0 6px 16px rgba(255, 77, 79, 0.4);
-            transition: transform 0.1s, box-shadow 0.2s;
+            width: 100%; padding: 24px; font-size: 32px; background: linear-gradient(135deg, #ff7875, #ff4d4f); color: white; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 800; box-shadow: 0 6px 16px rgba(255, 77, 79, 0.4); transition: transform 0.1s, box-shadow 0.2s;
         }
         #buzz-btn:active { transform: scale(0.97); }
-        #buzz-btn:disabled { 
-            background: #e8e8e8; 
-            color: #bfbfbf; 
-            box-shadow: none; 
-            cursor: not-allowed; 
-        }
+        #buzz-btn:disabled { background: #e8e8e8; color: #bfbfbf; box-shadow: none; cursor: not-allowed; }
 
         /* 思考タイマー */
-        #thinking-timer-display { 
-            font-size: 16px; 
-            color: var(--warning); 
-            font-weight: 700; 
-            margin-bottom: 12px; 
-            text-align: center; 
-            animation: pulse 1s infinite alternate;
-        }
+        #thinking-timer-display { font-size: 16px; color: var(--warning); font-weight: 700; margin-bottom: 12px; text-align: center; animation: pulse 1s infinite alternate; }
 
-        /* 回答入力エリアの視覚的強調 */
-        #answer-input-area {
-            background: #fffbe6;
-            border: 2px solid #ffe58f;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
-            text-align: center;
-            animation: slideUp 0.3s ease-out;
-        }
+        /* 回答入力エリア */
+        #answer-input-area { background: #fffbe6; border: 2px solid #ffe58f; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; animation: slideUp 0.3s ease-out; }
         #buzzer-announcement { font-size: 18px; font-weight: 700; margin: 0 0 12px 0; }
         #timer-display { font-size: 24px; color: var(--danger); font-weight: 800; margin-top: 10px; }
 
@@ -188,38 +115,38 @@
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
         th { background-color: #fafafa; font-weight: 600; color: #595959; }
 
-        /* ホスト神権限パネル */
-        .host-panel { 
-            background: #fff0f6; 
-            border: 1px solid #ffadd2; 
-            padding: 12px 16px; 
-            margin-bottom: 15px; 
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        /* ホストパネル */
+        .host-panel { background: #fff0f6; border: 1px solid #ffadd2; padding: 12px 16px; margin-bottom: 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .host-panel .btn { width: auto; padding: 6px 12px; font-size: 13px; }
 
-        /* トースト（通知メッセージ） */
-        .toast-msg { 
-            background: #e6f7ff; border: 1px solid #bae7ff; color: #0050b3;
-            padding: 12px; margin-bottom: 15px; border-radius: 6px; font-weight: 600; text-align: center; 
-        }
+        .toast-msg { background: #e6f7ff; border: 1px solid #bae7ff; color: #0050b3; padding: 12px; margin-bottom: 15px; border-radius: 6px; font-weight: 600; text-align: center; }
 
-        /* アニメーション演出用 */
         @keyframes pulse { from { opacity: 0.6; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        /* 早押し瞬間フラッシュ用オーバーレイ */
-        #screen-flash {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: white; opacity: 0; pointer-events: none; z-index: 9999;
-        }
+        /* 早押しフラッシュ */
+        #screen-flash { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: white; opacity: 0; pointer-events: none; z-index: 9999; }
         .flash-active { animation: flashAnim 0.3s ease-out; }
-        @keyframes flashAnim {
-            0% { opacity: 0.7; background: #ff4d4f; }
+        @keyframes flashAnim { 0% { opacity: 0.7; background: #ff4d4f; } 100% { opacity: 0; } }
+
+        /* ★追加：正解・不正解の画面オーバーレイ大型演出 */
+        #judgment-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: none; z-index: 10000; opacity: 0;
+        }
+        .overlay-correct { animation: judgmentAnim 1.2s ease-out; background: rgba(82, 196, 26, 0.08); }
+        .overlay-wrong { animation: judgmentAnim 1.2s ease-out; background: rgba(255, 77, 79, 0.08); }
+        
+        #judgment-mark {
+            font-size: 130px; font-weight: 900; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+            transform: scale(0.5);
+        }
+        @keyframes judgmentAnim {
+            0% { opacity: 0; transform: scale(0.3); }
+            15% { opacity: 1; transform: scale(1.1); }
+            30% { transform: scale(1.0); }
+            80% { opacity: 1; }
             100% { opacity: 0; }
         }
     </style>
@@ -227,10 +154,10 @@
 <body>
 
 <div id="screen-flash"></div>
+<div id="judgment-overlay"><div id="judgment-mark"></div></div>
 
 <div class="container">
     <h1>プレミアム早押しクイズ</h1>
-
     <div id="toast-area" class="toast-msg hidden"></div>
 
     <div id="welcome-view" class="card">
@@ -366,7 +293,6 @@
 
     let socket = null;
 
-    // DOM要素の全マッピング
     const toastArea = document.getElementById('toast-area');
     const welcomeView = document.getElementById('welcome-view');
     const gameArea = document.getElementById('game-area');
@@ -387,15 +313,34 @@
     const quizFullQuestion = document.getElementById('quiz-full-question');
     const thinkingTimerDisplay = document.getElementById('thinking-timer-display');
     const screenFlash = document.getElementById('screen-flash');
+    
+    // オーバーレイ用DOM
+    const judgmentOverlay = document.getElementById('judgment-overlay');
+    const judgmentMark = document.getElementById('judgment-mark');
 
     function showToast(msg) { toastArea.innerText = msg; toastArea.classList.remove('hidden'); }
     function hideToast() { toastArea.classList.add('hidden'); }
 
-    // ★追加: 視覚フィードバック（画面瞬間フラッシュ）関数
     function triggerBuzzerFlash() {
         screenFlash.classList.remove('flash-active');
-        void screenFlash.offsetWidth; // リフローを起こしてアニメーションをリセット
+        void screenFlash.offsetWidth;
         screenFlash.classList.add('flash-active');
+    }
+
+    // ★追加：正誤判定の大画面アニメーション演出をトリガーする関数
+    function triggerJudgmentEffect(isCorrect) {
+        judgmentOverlay.className = ""; // クラスリセット
+        void judgmentOverlay.offsetWidth; // リフロー
+        
+        if (isCorrect) {
+            judgmentMark.innerText = "◯";
+            judgmentMark.style.color = "var(--success)";
+            judgmentOverlay.classList.add('overlay-correct');
+        } else {
+            judgmentMark.innerText = "✕";
+            judgmentMark.style.color = "var(--danger)";
+            judgmentOverlay.classList.add('overlay-wrong');
+        }
     }
 
     document.getElementById('join-btn').onclick = () => {
@@ -416,7 +361,6 @@
             playerTableBody.innerHTML = Object.values(state.players)
                 .map(p => `<tr><td><strong>${p.name} ${p.id === state.hostId ? '👑' : ''}</strong></td><td><span style="color:${p.currentScore >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${p.currentScore} 点</span></td><td>${p.totalScore} 点</td></tr>`).join('');
 
-            // フォームの値を同期
             document.getElementById('genre').value = state.config.genre;
             document.getElementById('keyword').value = state.config.keyword;
             document.getElementById('difficulty').value = state.config.difficulty;
@@ -428,7 +372,22 @@
             document.getElementById('plusScore').value = state.config.plusScore;
             document.getElementById('minusScore').value = state.config.minusScore;
 
+            // ★修正1: 【クライアント側での早押しボタン制御】
+            // 自分自身の現在の「お手つき回数」を取得
+            const myWrongCount = state.wrongCountsInRound[socket.id] || 0;
             const amIHost = socket.id === state.hostId;
+
+            if (state.status === 'QUIZ_TEXT') {
+                // お手つき制限を超えている場合は、ボタンを最初から押せなくする
+                if (myWrongCount >= state.config.wrongLimit) {
+                    buzzBtn.disabled = true;
+                    buzzBtn.innerText = "❌ お手つき上限到達";
+                } else {
+                    buzzBtn.disabled = false;
+                    buzzBtn.innerText = "BUZZ!!";
+                }
+            }
+
             if (amIHost && state.status !== 'LOBBY') {
                 hostGodPanel.classList.remove('hidden');
                 const resultBtns = document.querySelectorAll('.id-result-only');
@@ -461,7 +420,9 @@
         socket.on('quiz-start', (data) => {
             document.getElementById('quiz-number').innerText = `ROUND ${data.index + 1}`;
             buzzBtn.disabled = false;
+            buzzBtn.innerText = "BUZZ!!";
             answerInputArea.classList.add('hidden');
+            answerField.value = ""; // 入力欄をきれいにしておく
             thinkingTimerDisplay.innerText = "";
             confirmBtn.disabled = false;
             confirmBtn.innerText = "確認しました（次の問題へ進む）";
@@ -478,15 +439,17 @@
             thinkingTimerDisplay.innerText = "";
             answerInputArea.classList.remove('hidden');
             
-            // ★視覚フィードバック: 誰かが押した瞬間に赤い閃光エフェクトを走らせる
             triggerBuzzerFlash();
 
             if (data.playerId === socket.id) {
                 buzzerAnnouncement.innerHTML = `<span style="color:var(--success)">🔔 あなたの解答権です！</span>`;
-                answerField.disabled = false; answerField.focus(); submitBtn.disabled = false;
+                answerField.disabled = false; 
+                answerField.focus(); 
+                submitBtn.disabled = false;
             } else {
                 buzzerAnnouncement.innerHTML = `<span style="color:var(--danger)">🛑 ${data.name} が解答中...</span>`;
-                answerField.disabled = true; submitBtn.disabled = true;
+                answerField.disabled = true; 
+                submitBtn.disabled = true;
             }
         });
 
@@ -495,10 +458,18 @@
         });
 
         socket.on('quiz-round-result', (data) => {
+            // ★修正1: 【ボタンの即時無効化ガード】解答時間が終わった、あるいは結果が出た瞬間に送信を封じる
+            answerField.disabled = true;
+            submitBtn.disabled = true;
             answerInputArea.classList.add('hidden'); 
             thinkingTimerDisplay.innerText = "";
             
-            // 正誤判定に合わせてテキストの色をリッチに切り替え
+            // ★修正2: 【正解・不正解の大画面演出をトリガー】
+            // タイムアップスルー（解答者なし）の場合は演出をスキップ、誰かが答えたときのみ演出を走らせる
+            if(data.answeredPlayer !== "なし" && data.answerText !== "(ホストによる強制スキップ)") {
+                triggerJudgmentEffect(data.isCorrect);
+            }
+
             const statusColor = data.isCorrect ? 'var(--success)' : 'var(--danger)';
             document.getElementById('round-status').innerHTML = `${data.answeredPlayer} の回答: <span style="color:${statusColor}">${data.isCorrect ? '【 正解 ◯ 】' : '【 不正解 ✕ 】'}</span>`;
             
@@ -544,7 +515,14 @@
         confirmBtn.innerText = "他の参加者の確認を待っています...";
     };
 
-    const sendAnswer = () => { socket.emit('submit-answer', answerField.value); answerField.value = ""; };
+    // ★修正1：多重送信防止のために、一度送信ボタンが押されたら即座にUIを非活性化するガードを注入
+    const sendAnswer = () => { 
+        if (answerField.disabled) return; // すでに無効化されていればスキップ
+        socket.emit('submit-answer', answerField.value); 
+        answerField.value = ""; 
+        answerField.disabled = true;
+        submitBtn.disabled = true;
+    };
     submitBtn.onclick = sendAnswer;
     answerField.onkeydown = (e) => { if(e.key === 'Enter') sendAnswer(); };
 </script>
