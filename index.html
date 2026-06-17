@@ -236,7 +236,7 @@
 
     function setupSocketEvents() {
         // ★修正：「設定反映」ボタン通知をトーストで100%目立たせる
-        socket.on('config-saved', (msg) => { showToast(msg); /*setTimeout(hideToast, 2500);*/ });
+        socket.on('config-saved', (msg) => { showToast(msg); setTimeout(hideToast, 2500); });
         socket.on('generating-quizzes', (msg) => { showToast(msg); });
         socket.on('host-override-notice', (msg) => { showToast(msg); setTimeout(hideToast, 4000); });
 
@@ -283,9 +283,9 @@
             });
 
             if (state.status === 'LOBBY') {
-                lobbyView.classList.remove('hidden'); quizView.classList.add('hidden'); resultView.classList.add('hidden'); hideToast();
+                lobbyView.classList.remove('hidden'); quizView.classList.add('hidden'); resultView.classList.add('hidden');
             } else if (state.status === 'QUIZ_TEXT' || state.status === 'QUIZ_ANSWER') {
-                lobbyView.classList.add('hidden'); quizView.classList.remove('hidden'); resultView.classList.add('hidden'); hideToast();
+                lobbyView.classList.add('hidden'); quizView.classList.remove('hidden'); resultView.classList.add('hidden');
             } else if (state.status === 'QUIZ_RESULT') {
                 lobbyView.classList.add('hidden'); quizView.classList.remove('hidden'); resultView.classList.remove('hidden');
             }
