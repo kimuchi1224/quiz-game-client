@@ -55,8 +55,21 @@
         .host-panel { background: #fff0f6; border: 1px solid #ffadd2; padding: 12px 16px; margin-bottom: 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
 
         /* 通知トースト */
-        .toast-msg { background: #e6f7ff; border: 1px solid #bae7ff; color: #0050b3; padding: 12px; margin-bottom: 15px; border-radius: 6px; font-weight: 600; text-align: center; font-size: 16px; }
-
+        .toast-msg { 
+            background: #e6f7ff; 
+            border: 1px solid #bae7ff; 
+            color: #0050b3; 
+            padding: 12px; 
+            margin-bottom: 15px; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            text-align: center; 
+            font-size: 16px;
+            
+            /* ★追加：デフォルトを非表示ではなくblockベースにし、hiddenクラスの干渉を防ぐ */
+            display: block; 
+        }
+        
         /* エフェクト演出レイヤー */
         #screen-flash { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: white; opacity: 0; pointer-events: none; z-index: 9999; }
         .flash-active { animation: flashAnim 0.3s ease-out; }
@@ -189,9 +202,12 @@
     const judgmentMark = document.getElementById('judgment-mark');
     const answersLogList = document.getElementById('answers-log-list');
 
-    function showToast(msg) { toastArea.innerText = msg; toastArea.classList.remove('hidden'); }
-    function hideToast() { toastArea.classList.add('hidden'); }
-
+    function showToast(msg) { 
+        toastArea.innerText = msg; 
+        toastArea.style.display = 'block'; 
+    }
+    function hideToast() { toastArea.style.display = 'none'; }
+    
     function triggerBuzzerFlash() {
         screenFlash.className = ""; void screenFlash.offsetWidth; screenFlash.classList.add('flash-active');
     }
