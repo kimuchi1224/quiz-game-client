@@ -2,21 +2,23 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>リアルタイム早押しクイズ</title>
+    <title>リアルタイム早押しクイズ - プロ仕様</title>
     <style>
         body { font-family: sans-serif; background: #f0f2f5; margin: 20px; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .hidden { display: none !important; }
-        #quiz-text { font-size: 24px; font-weight: bold; min-height: 80px; border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; background: #fafafa; }
-        #buzz-btn { width: 100%; padding: 20px; font-size: 28px; background: #ff4d4f; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        #quiz-text { font-size: 24px; font-weight: bold; min-height: 80px; border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; background: #fafafa; line-height: 1.5; }
+        #buzz-btn { width: 100%; padding: 20px; font-size: 28px; background: #ff4d4f; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         #buzz-btn:disabled { background: #cccccc; cursor: not-allowed; }
         .panel { border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
-        .toast-msg { background: #fffbe6; border: 1px solid #ffe58f; padding: 10px; margin-bottom: 10px; border-radius: 4px; font-weight: bold; color: #d46b08; }
-        #confirm-btn { padding: 15px 30px; font-size: 20px; background: #2f54eb; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 15px; }
-        #confirm-btn:disabled { background: #f5f5f5; color: #rgba(0,0,0,.25); border: 1px solid #d9d9d9; cursor: not-allowed; }
+        .toast-msg { background: #fffbe6; border: 1px solid #ffe58f; padding: 15px; margin-bottom: 10px; border-radius: 4px; font-weight: bold; color: #d46b08; text-align: center; font-size: 18px; }
+        #confirm-btn { padding: 12px; font-size: 18px; background: #2f54eb; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; }
+        #confirm-btn:disabled { background: #f5f5f5; color: #ccc; border: 1px solid #d9d9d9; cursor: not-allowed; }
+        .host-panel { background: #fff0f6; border: 1px solid #ffadd2; padding: 10px; margin-top: 10px; border-radius: 4px; }
+        .host-btn { padding: 6px 12px; margin-right: 5px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -33,20 +35,29 @@
 
     <div id="game-area" class="hidden">
         
+        <div id="host-god-panel" class="host-panel hidden">
+            <span style="color: #eb2f96; font-weight: bold;">👑 ホスト専用コマンド:</span>
+            <button class="host-btn" id="host-skip-btn" style="background: #fa8c16; color:white;">この問題を強制スキップ</button>
+            <button class="host-btn id-result-only" id="host-correct-btn" style="background: #52c41a; color:white;">直前の解答を【強制正解】にする</button>
+            <button class="host-btn id-result-only" id="host-wrong-btn" style="background: #ff4d4f; color:white;">直前の解答を【強制不正解】にする</button>
+        </div>
+
         <div id="lobby-view" class="panel hidden">
             <h3>ゲーム設定 (ホスト用)</h3>
             ジャンル: <input type="text" id="genre" value="一般"><br><br>
+            ★ お題・キーワード縛り: <input type="text" id="keyword" placeholder="例：ジブリ, 歴史（空欄で制限なし）" style="width: 250px;"><br><br>
             難易度: <select id="difficulty"><option>初級</option><option selected>中級</option><option>上級</option></select><br><br>
             問題数: <input type="number" id="count" value="5" style="width: 50px;"><br><br>
             
-            <strong>【拡張ルール設定】</strong><br>
+            <strong>【ルール詳細設定】</strong><br>
             誤答時のルール: <select id="continueOnWrong"><option value="true">他の人で早押し続行</option><option value="false">即次の問題へ</option></select><br><br>
+            ★ お手つき制限: 各プレイヤー1問につき <input type="number" id="wrongLimit" value="2" style="width: 50px;"> 回間違えたらその問題は解答不可<br><br>
             解答制限時間: <input type="number" id="answerLimit" value="10" style="width: 50px;"> 秒<br><br>
             読み上げ後の猶予時間: <input type="number" id="thinkingLimit" value="7" style="width: 50px;"> 秒<br><br>
             正解時の加点: <input type="number" id="plusScore" value="10" style="width: 50px;"> 点<br>
             誤答時の減点: <input type="number" id="minusScore" value="5" style="width: 50px;"> 点<br><br>
 
-            <button id="save-config-btn" style="padding: 5px 15px;">設定反映</button>
+            <button id="save-config-btn" style="padding: 5px 15px; background: #13c2c2; color:white; border:none; border-radius:4px; cursor:pointer;">設定反映</button>
             <hr>
             <button id="start-btn" style="padding: 10px 20px; font-size: 18px; background: #52c41a; color: white; border:none; border-radius:4px; cursor:pointer;">ゲーム開始</button>
         </div>
@@ -69,12 +80,11 @@
             <h3>結果発表</h3>
             <p id="round-status" style="font-size: 20px; font-weight: bold;"></p>
             <p style="background: #fff; padding: 10px; border-left: 5px solid #1890ff; border-radius: 4px;">
-                <strong>問題の全文:</strong> <br><span id="quiz-full-question" style="font-size: 16px; color: #333;"></span>
+                <strong>問題の全文 (逆算の法則):</strong> <br><span id="quiz-full-question" style="font-size: 16px; color: #333;"></span>
             </p>
             <p><strong>あなたの入力:</strong> <span id="user-input-ans"></span></p>
             <p><strong>正解:</strong> <span id="correct-ans"></span></p>
             <p><strong>解説:</strong> <span id="quiz-exp"></span></p>
-            
             <button id="confirm-btn">次の問題へ進む（確認）</button>
             <p id="confirm-status" style="font-size: 14px; color: #555; margin-top: 5px;"></p>
         </div>
@@ -82,9 +92,7 @@
         <div class="panel">
             <h3>参加プレイヤー情報</h3>
             <table>
-                <thead>
-                    <tr><th>プレイヤー名</th><th>今ゲームの点数</th><th>総合スコア（通算）</th></tr>
-                </thead>
+                <thead><tr><th>プレイヤー名</th><th>今ゲームの点数</th><th>総合スコア（通算）</th></tr></thead>
                 <tbody id="player-table-body"></tbody>
             </table>
         </div>
@@ -115,99 +123,73 @@
     const timerDisplay = document.getElementById('timer-display');
     const confirmBtn = document.getElementById('confirm-btn');
     const confirmStatus = document.getElementById('confirm-status');
-    const thinkingTimerDisplay = document.getElementById('thinking-timer-display');
+    const hostGodPanel = document.getElementById('host-god-panel');
     const quizFullQuestion = document.getElementById('quiz-full-question');
-    
-    function showToast(msg) {
-        toastArea.innerText = msg;
-        toastArea.classList.remove('hidden');
-    }
-    function hideToast() {
-        toastArea.classList.add('hidden');
-    }
+    const thinkingTimerDisplay = document.getElementById('thinking-timer-display');
+
+    function showToast(msg) { toastArea.innerText = msg; toastArea.classList.remove('hidden'); }
+    function hideToast() { toastArea.classList.add('hidden'); }
 
     document.getElementById('join-btn').onclick = () => {
         const name = document.getElementById('nickname-field').value.trim();
         if (!name) { alert('ニックネームを入力してください。'); return; }
-
         socket = io(BACKEND_URL, { query: { name: name } });
         setupSocketEvents();
-
         welcomeView.classList.add('hidden');
         gameArea.classList.remove('hidden');
     };
 
     function setupSocketEvents() {
-        // 設定保存メッセージの受信
-        socket.on('config-saved', (msg) => {
-            alert(msg); // 確実に入力者に伝えるためアラート形式、またはshowToast
-        });
-
-        // クイズ自動生成中のメッセージ受信
-        socket.on('generating-quizzes', (msg) => {
-            showToast(msg);
-        });
+        socket.on('config-saved', (msg) => { alert(msg); });
+        socket.on('generating-quizzes', (msg) => { showToast(msg); });
+        socket.on('host-override-notice', (msg) => { alert(msg); });
 
         socket.on('room-update', (state) => {
-            // プレイヤーリストの描画（ホストの人には王冠マーク👑などをつけると分かりやすい！）
             playerTableBody.innerHTML = Object.values(state.players)
-                .map(p => {
-                    const isHost = p.id === state.hostId;
-                    return `
-                        <tr>
-                            <td><strong>${p.name} ${isHost ? '👑 (ホスト)' : ''}</strong></td>
-                            <td>${p.currentScore} 点</td>
-                            <td>${p.totalScore} 点</td>
-                        </tr>
-                    `;
-                }).join('');
+                .map(p => `<tr><td><strong>${p.name} ${p.id === state.hostId ? '👑' : ''}</strong></td><td>${p.currentScore} 点</td><td>${p.totalScore} 点</td></tr>`).join('');
 
-            // ★追加：自分がホストかどうかの判定
-            const amIHost = socket.id === state.hostId;
-
-            // ホストではない場合、設定フォームやボタンを操作できないようにする
-            document.getElementById('genre').disabled = !amIHost;
-            document.getElementById('difficulty').disabled = !amIHost;
-            document.getElementById('count').disabled = !amIHost;
-            document.getElementById('continueOnWrong').disabled = !amIHost;
-            document.getElementById('answerLimit').disabled = !amIHost;
-            document.getElementById('thinkingLimit').disabled = !amIHost;
-            document.getElementById('plusScore').disabled = !amIHost;
-            document.getElementById('minusScore').disabled = !amIHost;
-    
-            // 設定反映ボタンとゲーム開始ボタンの表示・非表示切り替え
-            if (amIHost) {
-                document.getElementById('save-config-btn').classList.remove('hidden');
-                document.getElementById('start-btn').classList.remove('hidden');
-            } else {
-                document.getElementById('save-config-btn').classList.add('hidden');
-                document.getElementById('start-btn').classList.add('hidden');
-            }
-            
-            // 設定フォームの同期
+            // 設定の同期
             document.getElementById('genre').value = state.config.genre;
+            document.getElementById('keyword').value = state.config.keyword;
             document.getElementById('difficulty').value = state.config.difficulty;
             document.getElementById('count').value = state.config.count;
             document.getElementById('continueOnWrong').value = state.config.continueOnWrong.toString();
+            document.getElementById('wrongLimit').value = state.config.wrongLimit;
             document.getElementById('answerLimit').value = state.config.answerLimit;
             document.getElementById('thinkingLimit').value = state.config.thinkingLimit;
             document.getElementById('plusScore').value = state.config.plusScore;
             document.getElementById('minusScore').value = state.config.minusScore;
 
+            // ホストパネルの権限可視化
+            const amIHost = socket.id === state.hostId;
+            if (amIHost && state.status !== 'LOBBY') {
+                hostGodPanel.classList.remove('hidden');
+                // 解説画面のときだけ上書きボタンを有効化
+                const resultBtns = document.querySelectorAll('.id-result-only');
+                resultBtns.forEach(btn => {
+                    if(state.status === 'QUIZ_RESULT') btn.classList.remove('hidden');
+                    else btn.classList.add('hidden');
+                });
+            } else {
+                hostGodPanel.classList.add('hidden');
+            }
+
+            // ホスト以外は設定フォームを触れないように制限
+            const formElements = ['genre','keyword','difficulty','count','continueOnWrong','wrongLimit','answerLimit','thinkingLimit','plusScore','minusScore','save-config-btn','start-btn'];
+            formElements.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.disabled = !amIHost;
+                if((id === 'save-config-btn' || id === 'start-btn') && el) {
+                    if(amIHost) el.classList.remove('hidden'); else el.classList.add('hidden');
+                }
+            });
+
             if (state.status === 'LOBBY') {
-                lobbyView.classList.remove('hidden');
-                quizView.classList.add('hidden');
-                resultView.classList.add('hidden');
-                hideToast();
+                lobbyView.classList.remove('hidden'); quizView.classList.add('hidden'); resultView.classList.add('hidden'); hideToast();
             } else if (state.status === 'QUIZ_TEXT' || state.status === 'QUIZ_ANSWER') {
-                lobbyView.classList.add('hidden');
-                quizView.classList.remove('hidden');
-                resultView.classList.add('hidden');
-                hideToast();
+                lobbyView.classList.add('hidden'); quizView.classList.remove('hidden'); resultView.classList.add('hidden'); hideToast();
             } else if (state.status === 'QUIZ_RESULT') {
-                lobbyView.classList.add('hidden');
-                quizView.classList.remove('hidden');
-                resultView.classList.remove('hidden');
+                lobbyView.classList.add('hidden'); quizView.classList.remove('hidden'); resultView.classList.remove('hidden');
             }
         });
 
@@ -215,72 +197,63 @@
             document.getElementById('quiz-number').innerText = `第 ${data.index + 1} 問`;
             buzzBtn.disabled = false;
             answerInputArea.classList.add('hidden');
-            thinkingTimerDisplay.innerText = ""; // カウントダウン表示をリセット
+            thinkingTimerDisplay.innerText = "";
             confirmBtn.disabled = false;
             confirmBtn.innerText = "次の問題へ進む（確認）";
             confirmStatus.innerText = "";
             quizText.innerText = "";
-            quizFullQuestion.innerText = ""; // 全文をリセット
+            quizFullQuestion.innerText = "";
         });
 
-        socket.on('quiz-text-chunk', (data) => {
-            quizText.innerText = data.text;
-        });
+        socket.on('quiz-text-chunk', (data) => { quizText.innerText = data.text; });
+        socket.on('thinking-timer', (countdown) => { thinkingTimerDisplay.innerText = `🤔 シンキングタイム... 残り ${countdown} 秒！`; });
 
-        socket.on('thinking-timer', (countdown) => {
-            thinkingTimerDisplay.innerText = `🤔 全員思考中... 残り ${countdown} 秒！`;
-        });
-        
         socket.on('buzzed', (data) => {
             buzzBtn.disabled = true;
-            thinkingTimerDisplay.innerText = ""; // 消去
+            thinkingTimerDisplay.innerText = "";
             answerInputArea.classList.remove('hidden');
-            
             if (data.playerId === socket.id) {
                 buzzerAnnouncement.innerText = "あなたが解答権を獲得しました！";
-                answerField.disabled = false;
-                answerField.focus();
-                submitBtn.disabled = false;
+                answerField.disabled = false; answerField.focus(); submitBtn.disabled = false;
             } else {
                 buzzerAnnouncement.innerText = `${data.name} が解答中...`;
-                answerField.disabled = true;
-                submitBtn.disabled = true;
+                answerField.disabled = true; submitBtn.disabled = true;
             }
         });
 
-        socket.on('answer-timer', (countdown) => {
-            timerDisplay.innerText = `残り時間: ${countdown}秒`;
-        });
+        socket.on('answer-timer', (countdown) => { timerDisplay.innerText = `残り時間: ${countdown}秒`; });
 
         socket.on('quiz-round-result', (data) => {
             answerInputArea.classList.add('hidden'); 
-            thinkingTimerDisplay.innerText = ""; // 念のためここでも消去
-            document.getElementById('round-status').innerText = 
-                `${data.answeredPlayer} の回答は 【${data.isCorrect ? '正解 ◯' : '不正解 ✕'}】`;
+            thinkingTimerDisplay.innerText = "";
+            document.getElementById('round-status').innerText = `${data.answeredPlayer} の回答は 【${data.isCorrect ? '正解 ◯' : '不正解 ✕'}】`;
             quizFullQuestion.innerText = data.fullQuestion;
             document.getElementById('user-input-ans').innerText = data.answerText || "(タイムアウト)";
             document.getElementById('correct-ans').innerText = data.correctAnswer;
             document.getElementById('quiz-exp').innerText = data.explanation;
         });
 
-        // 誰かが確認ボタンを押したときの同期
         socket.on('confirm-update', (confirmedPlayers) => {
             const confirmedCount = Object.keys(confirmedPlayers).length;
             confirmStatus.innerText = `現在 ${confirmedCount} 人が確認済み...`;
         });
 
-        socket.on('game-over', (players) => {
-            alert("全問終了！最終スコアを確認してください。");
-        });
+        socket.on('game-over', (players) => { alert("全問終了！最終スコアを確認してください。"); });
     }
 
-    // 設定反映
+    // ホスト用リアルタイムコマンド送信
+    document.getElementById('host-skip-btn').onclick = () => socket.emit('host-control', 'skip');
+    document.getElementById('host-correct-btn').onclick = () => socket.emit('host-control', 'force-correct');
+    document.getElementById('host-wrong-btn').onclick = () => socket.emit('host-control', 'force-wrong');
+
     document.getElementById('save-config-btn').onclick = () => {
         socket.emit('set-config', {
             genre: document.getElementById('genre').value,
+            keyword: document.getElementById('keyword').value,
             difficulty: document.getElementById('difficulty').value,
             count: parseInt(document.getElementById('count').value),
             continueOnWrong: document.getElementById('continueOnWrong').value === 'true',
+            wrongLimit: parseInt(document.getElementById('wrongLimit').value),
             answerLimit: parseInt(document.getElementById('answerLimit').value),
             thinkingLimit: parseInt(document.getElementById('thinkingLimit').value),
             plusScore: parseInt(document.getElementById('plusScore').value),
@@ -291,17 +264,13 @@
     document.getElementById('start-btn').onclick = () => socket.emit('game-start');
     buzzBtn.onclick = () => socket.emit('buzz');
     
-    // 確認ボタン
     confirmBtn.onclick = () => {
         socket.emit('confirm-next');
         confirmBtn.disabled = true;
         confirmBtn.innerText = "他の参加者の確認を待っています...";
     };
 
-    const sendAnswer = () => {
-        socket.emit('submit-answer', answerField.value);
-        answerField.value = "";
-    };
+    const sendAnswer = () => { socket.emit('submit-answer', answerField.value); answerField.value = ""; };
     submitBtn.onclick = sendAnswer;
     answerField.onkeydown = (e) => { if(e.key === 'Enter') sendAnswer(); };
 </script>
