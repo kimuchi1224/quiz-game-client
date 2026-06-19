@@ -3,93 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>リアルタイム早押しクイズ - Ultimate Premium</title>
+    <title>リアルタイム早押しクイズ - Ultimate Premium Plus</title>
     <style>
         :root {
             --primary: #2f54eb; --primary-hover: #1d39c4; --success: #52c41a; --danger: #ff4d4f; --warning: #fa8c16;
             --bg-main: #f0f2f5; --card-bg: #ffffff; --text-main: #262626; --text-muted: #8c8c8c; --border-color: #f0f0f0; --radius: 12px;
         }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 20px; line-height: 1.6; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 20px; }
         .container { max-width: 760px; margin: 0 auto; }
-        h1 { text-align: center; color: var(--primary); font-size: 28px; margin-bottom: 24px; font-weight: 800; }
+        h1 { text-align: center; color: var(--primary); font-size: 28px; font-weight: 800; }
         .hidden { display: none !important; }
-        .card { background: var(--card-bg); padding: 24px; border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.02); }
+        .card { background: var(--card-bg); padding: 24px; border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
         
-        /* フォーム系 */
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        input[type="text"], input[type="number"], select { width: 100%; padding: 10px 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
-        input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(47, 84, 235, 0.2); }
-        input:disabled, select:disabled { background: #f5f5f5; color: var(--text-muted); cursor: not-allowed; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 10px 12px; border: 1px solid #d9d9d9; border-radius: 6px; box-sizing: border-box; }
 
-        /* ボタン */
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; font-size: 15px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; width: 100%; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; font-size: 15px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s; width: 100%; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-warning { background: var(--warning); color: white; }
-        .btn-sm { padding: 4px 8px; font-size: 12px; width: auto; border-radius: 4px; margin-left: 5px; }
+        .btn-neutral { background: #bfbfbf; color: white; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; width: auto; border-radius: 4px; margin-left: 4px; }
 
-        /* クイズ画面 */
-        #quiz-number { font-size: 16px; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px 0; text-align: center; }
-        #quiz-text { font-size: 22px; font-weight: 700; min-height: 100px; padding: 24px; margin-bottom: 20px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; text-align: left; white-space: pre-wrap; word-break: break-all; }
+        #quiz-number { font-size: 16px; color: var(--primary); text-transform: uppercase; text-align: center; font-weight: bold; }
+        #quiz-text { font-size: 22px; font-weight: 700; min-height: 100px; padding: 24px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; text-align: left; white-space: pre-wrap; word-break: break-all; }
         
-        #buzz-btn { width: 100%; padding: 24px; font-size: 32px; background: linear-gradient(135deg, #ff7875, #ff4d4f); color: white; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 800; box-shadow: 0 6px 16px rgba(255, 77, 79, 0.4); }
-        #buzz-btn:disabled { background: #e8e8e8; color: #bfbfbf; box-shadow: none; cursor: not-allowed; }
-        #thinking-timer-display { font-size: 16px; color: var(--warning); font-weight: 700; margin-bottom: 12px; text-align: center; }
+        #buzz-btn { width: 100%; padding: 24px; font-size: 32px; background: linear-gradient(135deg, #ff7875, #ff4d4f); color: white; border: none; border-radius: var(--radius); font-weight: 800; }
+        #buzz-btn:disabled { background: #e8e8e8; color: #bfbfbf; cursor: not-allowed; }
 
-        /* 回答・結果エリア */
-        #answer-input-area { background: #fffbe6; border: 2px solid #ffe58f; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; }
-        #buzzer-announcement { font-size: 18px; font-weight: 700; margin: 0 0 12px 0; }
-        #timer-display { font-size: 24px; color: var(--danger); font-weight: 800; margin-top: 10px; }
+        #answer-input-area { background: #fffbe6; border: 2px solid #ffe58f; padding: 20px; border-radius: 8px; text-align: center; margin-top:20px; }
         #result-view { background: #e6f7ff; border: 1px solid #bae7ff; }
-
-        /* 解答ログリスト */
         .log-list { margin: 10px 0; padding: 0; list-style: none; }
         .log-item { background: #fff; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e8e8e8; display: flex; justify-content: space-between; align-items: center; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { background-color: #fafafa; font-weight: 600; color: #595959; }
-        .host-panel { background: #fff0f6; border: 1px solid #ffadd2; padding: 12px 16px; margin-bottom: 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
-
-        /* 通知トースト */
-        .toast-msg { 
-            background: #e6f7ff; 
-            border: 1px solid #bae7ff; 
-            color: #0050b3; 
-            padding: 12px; 
-            margin-bottom: 15px; 
-            border-radius: 6px; 
-            font-weight: 600; 
-            text-align: center; 
-            font-size: 16px;
-            
-            /* ★追加：デフォルトを非表示ではなくblockベースにし、hiddenクラスの干渉を防ぐ */
-            display: block; 
-        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { background-color: #fafafa; color: #595959; }
         
-        /* エフェクト演出レイヤー */
-        #screen-flash { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: white; opacity: 0; pointer-events: none; z-index: 9999; }
-        .flash-active { animation: flashAnim 0.3s ease-out; }
-        @keyframes flashAnim { 0% { opacity: 0.7; background: #ff4d4f; } 100% { opacity: 0; } }
+        .toast-msg { background: #e6f7ff; border: 1px solid #bae7ff; color: #0050b3; padding: 12px; margin-bottom: 15px; border-radius: 6px; font-weight: 600; text-align: center; font-size: 16px; display: none; }
 
         #judgment-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 10000; opacity: 0; }
         .overlay-correct { animation: judgmentAnim 1.2s ease-out; background: rgba(82, 196, 26, 0.12); }
         .overlay-wrong { animation: judgmentAnim 1.2s ease-out; background: rgba(255, 77, 79, 0.12); }
-        #judgment-mark { font-size: 140px; font-weight: 900; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); }
-        @keyframes judgmentAnim { 0% { opacity: 0; transform: scale(0.3); } 15% { opacity: 1; transform: scale(1.1); } 30% { transform: scale(1.0); } 80% { opacity: 1; } 100% { opacity: 0; } }
+        #judgment-mark { font-size: 140px; font-weight: 900; }
+        @keyframes judgmentAnim { 0% { opacity: 0; transform: scale(0.3); } 15% { opacity: 1; transform: scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-<div id="screen-flash"></div>
 <div id="judgment-overlay"><div id="judgment-mark"></div></div>
 
 <div class="container">
     <h1>プレミアム早押しクイズ</h1>
-    <div id="toast-area" class="toast-msg hidden"></div>
+    <div id="toast-area" class="toast-msg"></div>
 
     <div id="welcome-view" class="card">
         <h3 style="margin-top:0;">プレイヤー入室</h3>
@@ -101,11 +70,6 @@
 
     <div id="game-area" class="hidden">
         
-        <div id="host-god-panel" class="host-panel hidden">
-            <span style="color: #eb2f96; font-weight: bold;">👑 ホスト権限:</span>
-            <button class="btn btn-warning" id="host-skip-btn" style="width:auto; padding:6px 12px; font-size:13px;">強制スキップ</button>
-        </div>
-
         <div id="lobby-view" class="card">
             <h3 style="margin-top:0; border-bottom:2px solid var(--primary); padding-bottom:6px; color:var(--primary);">ゲーム設定ルーム</h3>
             <div class="form-row"><div class="form-group"><label>クイズのジャンル</label><input type="text" id="genre" value="一般"></div><div class="form-group"><label>お題・キーワード縛り</label><input type="text" id="keyword" placeholder="例：ジブリ"></div></div>
@@ -113,10 +77,10 @@
             
             <div style="background:#f9f9f9; padding:14px; border-radius:8px; margin-bottom:16px;">
                 <span style="font-weight:bold; font-size:14px; color:#595959;">競技ルール詳細</span>
-                <div class="form-row" style="margin-top:10px;"><div class="form-group"><label>誤答時の処理</label><select id="continueOnWrong"><option value="true">他の解答者で早押し続行</option><option value="false">即次の問題へ移行</option></select></div><div class="form-group"><label>許容お手つき回数</label><input type="number" id="wrongLimit" value="2"></div></div>
+                <div class="form-row" style="margin-top:10px;"><div class="form-group"><label>誤答時の処理</label><select id="continueOnWrong"><option value="true">他の解答者で早押し続行</option><option value="false">即次の問題へ移行</option></select></div><div class="form-group"><label>1問のお手つき制限</label><input type="number" id="wrongLimit" value="2"></div></div>
+                <div class="form-row"><div class="form-group"><label>👑 先取勝利ポイント (点)</label><input type="number" id="winScore" value="30"></div><div class="form-group"><label>💀 累計お手つき失格上限 (回)</label><input type="number" id="gameWrongLimit" value="3"></div></div>
                 <div class="form-row"><div class="form-group"><label>解答制限時間 (秒)</label><input type="number" id="answerLimit" value="10"></div><div class="form-group"><label>読み上げ後猶予時間 (秒)</label><input type="number" id="thinkingLimit" value="7"></div></div>
                 <div class="form-row"><div class="form-group"><label>正解時の加点</label><input type="number" id="plusScore" value="10"></div><div class="form-group"><label>誤答時の減点</label><input type="number" id="minusScore" value="5"></div></div>
-                <div class="form-row"><div class="form-group"><label>👑 先取勝利ポイント (点)</label><input type="number" id="winScore" value="30"></div><div class="form-group"><label>💀 累計お手つき失格上限 (回)</label><input type="number" id="gameWrongLimit" value="3"></div></div>
             </div>
             <button id="save-config-btn" class="btn btn-primary" style="margin-bottom:12px; background:#13c2c2;">設定を保存・反映する</button>
             <button id="start-btn" class="btn btn-success">この設定でゲームを開始する 🚀</button>
@@ -125,7 +89,7 @@
         <div id="quiz-view" class="card hidden">
             <p id="quiz-number">ROUND 1</p>
             <div id="quiz-text">問題文が流れます...</div>
-            <div id="thinking-timer-display"></div>
+            <div id="thinking-timer-display" style="text-align:center; font-weight:bold; color:var(--warning); margin-bottom:10px;"></div>
             <button id="buzz-btn">BUZZ!!</button>
 
             <div id="answer-input-area" class="hidden">
@@ -134,7 +98,7 @@
                     <input type="text" id="answer-field" placeholder="答えを入力...">
                     <button id="submit-btn" class="btn btn-primary" style="width:100px;">送信</button>
                 </div>
-                <div id="timer-display"></div>
+                <div id="timer-display" style="font-size:24px; color:var(--danger); font-weight:800; margin-top:10px;"></div>
             </div>
         </div>
 
@@ -142,22 +106,24 @@
             <h3 style="margin-top:0;">ROUND RESULT</h3>
             <p id="round-status"></p>
             <div style="background: rgba(255,255,255,0.7); padding: 14px; border-left: 5px solid var(--primary); border-radius: 4px; margin-bottom:15px;">
-                <strong style="font-size:13px; color:var(--text-muted);">問題文の全文:</strong><br>
-                <span id="quiz-full-question" style="font-size: 16px; font-weight:600;"></span>
+                <strong>問題文の全文:</strong><br><span id="quiz-full-question" style="font-weight:600;"></span>
             </div>
-            
             <div style="margin-bottom:15px;">
                 <strong>正解:</strong> <span id="correct-ans" style="color:var(--success); font-weight:bold;"></span><br>
                 <strong>解説:</strong> <span id="quiz-exp"></span>
             </div>
-
             <div style="background:#f5f5f5; padding:15px; border-radius:8px; margin-bottom:15px;">
-                <strong style="font-size:14px; color:#595959;">このラウンドの解答履歴・ホスト上書き判定:</strong>
+                <strong style="font-size:14px; color:#595959;">解答履歴・ホスト判定調整:</strong>
                 <ul id="answers-log-list" class="log-list"></ul>
             </div>
-            
-            <button id="confirm-btn" class="btn btn-primary">確認しました（次の問題へ進む）</button>
+            <button id="confirm-btn" class="btn btn-primary">確認しました（次へ進む）</button>
             <p id="confirm-status" style="font-size: 13px; color: var(--text-muted); margin-top: 6px; text-align:center;"></p>
+        </div>
+
+        <div id="gameover-view" class="card hidden" style="background:#fff2e8; border:2px solid #ffbb96; text-align:center;">
+            <h2 style="color:var(--warning); margin-top:0;">🏆 GAME OVER 🏆</h2>
+            <p id="final-announcement" style="font-size:18px; font-weight:bold;"></p>
+            <button id="return-lobby-btn" class="btn btn-warning" style="max-width:280px; margin:10px auto 0 auto;">ロビー（待機部屋）に戻る 🔄</button>
         </div>
 
         <div class="card">
@@ -177,7 +143,7 @@
         : 'https://my-quiz-server-5rtw.onrender.com'; 
 
     let socket = null;
-    let isAmIHost = false; // 自分がホストか保持
+    let isAmIHost = false;
 
     const toastArea = document.getElementById('toast-area');
     const welcomeView = document.getElementById('welcome-view');
@@ -185,6 +151,7 @@
     const lobbyView = document.getElementById('lobby-view');
     const quizView = document.getElementById('quiz-view');
     const resultView = document.getElementById('result-view');
+    const gameoverView = document.getElementById('gameover-view');
     const playerTableBody = document.getElementById('player-table-body');
     const quizText = document.getElementById('quiz-text');
     const buzzBtn = document.getElementById('buzz-btn');
@@ -195,34 +162,22 @@
     const timerDisplay = document.getElementById('timer-display');
     const confirmBtn = document.getElementById('confirm-btn');
     const confirmStatus = document.getElementById('confirm-status');
-    const hostGodPanel = document.getElementById('host-god-panel');
     const quizFullQuestion = document.getElementById('quiz-full-question');
     const thinkingTimerDisplay = document.getElementById('thinking-timer-display');
-    const screenFlash = document.getElementById('screen-flash');
     const judgmentOverlay = document.getElementById('judgment-overlay');
     const judgmentMark = document.getElementById('judgment-mark');
     const answersLogList = document.getElementById('answers-log-list');
+    const finalAnnouncement = document.getElementById('final-announcement');
+    const returnLobbyBtn = document.getElementById('return-lobby-btn');
 
-    function showToast(msg) { 
-        toastArea.innerText = msg; 
-        toastArea.classList.remove('hidden');
-        toastArea.style.display = 'block'; 
-    }
-    function hideToast() { 
-        toastArea.style.display = 'none'; 
-        toastArea.classList.add('hidden');
-    }
-    
-    function triggerBuzzerFlash() {
-        screenFlash.className = ""; void screenFlash.offsetWidth; screenFlash.classList.add('flash-active');
-    }
+    function showToast(msg) { toastArea.innerText = msg; toastArea.style.display = 'block'; }
+    function hideToast() { toastArea.style.display = 'none'; }
 
-    // ★修正・強化：演出呼び出しを最適化
     function triggerJudgmentEffect(isCorrect) {
         judgmentOverlay.className = ""; void judgmentOverlay.offsetWidth;
-        if (isCorrect) {
+        if (isCorrect === true) {
             judgmentMark.innerText = "◯"; judgmentMark.style.color = "var(--success)"; judgmentOverlay.classList.add('overlay-correct');
-        } else {
+        } else if (isCorrect === false) {
             judgmentMark.innerText = "✕"; judgmentMark.style.color = "var(--danger)"; judgmentOverlay.classList.add('overlay-wrong');
         }
     }
@@ -237,73 +192,56 @@
 
     function setupSocketEvents() {
         socket.on('config-saved', (msg) => { showToast(msg); setTimeout(hideToast, 2500); });
-        socket.on('generating-quizzes', (msg) => { showToast(msg); });
+        
+        // ★修正1：クイズ生成が始まったら、設定画面を閉じる
+        socket.on('generating-quizzes', (msg) => { 
+            showToast(msg); 
+            lobbyView.classList.add('hidden'); // 設定画面を非表示に
+        });
+        
         socket.on('host-override-notice', (msg) => { showToast(msg); setTimeout(hideToast, 4000); });
 
         socket.on('room-update', (state) => {
+            // ランキング更新
             playerTableBody.innerHTML = Object.values(state.players)
                 .map(p => {
                     const isDisqualified = state.isDisqualified[p.id] === true;
                     const wrongCount = state.gameWrongCounts[p.id] || 0;
-                    
-                    // 状態に応じたバッジを生成
-                    let statusBadge = "";
-                    if (isDisqualified) {
-                        statusBadge = `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">❌ 失格</span>`;
-                    } else {
-                        statusBadge = `<span style="background:#efefef; color:#555; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">✕ お手つき: ${wrongCount}/${state.config.gameWrongLimit}</span>`;
-                    }
-        
-                    return `
-                    <tr style="${isDisqualified ? 'opacity: 0.5; background: #fdf2f2;' : ''}">
-                        <td>
-                            <strong>${p.name} ${p.id === state.hostId ? '👑' : ''}</strong>
-                            ${statusBadge}
-                        </td>
-                        <td><span style="color:${p.currentScore >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${p.currentScore} 点</span></td>
-                        <td>${p.totalScore} 点</td>
-                    </tr>`;
+                    let badge = isDisqualified 
+                        ? `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">❌ 失格</span>`
+                        : `<span style="background:#efefef; color:#555; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">✕ お手つき: ${wrongCount}/${state.config.gameWrongLimit}</span>`;
+                    return `<tr style="${isDisqualified ? 'opacity: 0.5; background: #fdf2f2;' : ''}"><td><strong>${p.name} ${p.id === state.hostId ? '👑' : ''}</strong>${badge}</td><td><span style="color:${p.currentScore >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${p.currentScore} 点</span></td><td>${p.totalScore} 点</td></tr>`;
                 }).join('');
-            
-            // 設定の同期
+
             document.getElementById('genre').value = state.config.genre;
             document.getElementById('keyword').value = state.config.keyword;
             document.getElementById('difficulty').value = state.config.difficulty;
             document.getElementById('count').value = state.config.count;
             document.getElementById('continueOnWrong').value = state.config.continueOnWrong.toString();
             document.getElementById('wrongLimit').value = state.config.wrongLimit;
+            document.getElementById('winScore').value = state.config.winScore || 30;
+            document.getElementById('gameWrongLimit').value = state.config.gameWrongLimit || 3;
             document.getElementById('answerLimit').value = state.config.answerLimit;
             document.getElementById('thinkingLimit').value = state.config.thinkingLimit;
             document.getElementById('plusScore').value = state.config.plusScore;
             document.getElementById('minusScore').value = state.config.minusScore;
-            document.getElementById('winScore').value = state.config.winScore || 30;
-            document.getElementById('gameWrongLimit').value = state.config.gameWrongLimit || 3;
-            
+
             isAmIHost = socket.id === state.hostId;
-            if (isAmIHost && state.status !== 'LOBBY') {
-                hostGodPanel.classList.remove('hidden');
+            if (isAmIHost && state.status === 'GAME_OVER') {
+                returnLobbyBtn.classList.remove('hidden');
             } else {
-                hostGodPanel.classList.add('hidden');
+                returnLobbyBtn.classList.add('hidden');
             }
 
-            // 早押しボタンの制御を「失格者」にも適用
             const myWrongCount = state.wrongCountsInRound[socket.id] || 0;
             const amIDisqualified = state.isDisqualified[socket.id] === true;
-            
             if (state.status === 'QUIZ_TEXT') {
-                if (amIDisqualified) {
-                    buzzBtn.disabled = true;
-                    buzzBtn.innerText = "💀 あなたは失格しています";
-                } else if (myWrongCount >= state.config.wrongLimit) {
-                    buzzBtn.disabled = true;
-                    buzzBtn.innerText = "❌ この問題はお手つき上限";
-                } else {
-                    buzzBtn.disabled = false;
-                    buzzBtn.innerText = "BUZZ!!";
-                }
+                if (amIDisqualified) { buzzBtn.disabled = true; buzzBtn.innerText = "💀 あなたは失格しています"; }
+                else if (myWrongCount >= state.config.wrongLimit) { buzzBtn.disabled = true; buzzBtn.innerText = "❌ この問題はお手つき上限"; }
+                else { buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!!"; }
             }
-            
-            const formElements = ['genre','keyword','difficulty','count','continueOnWrong','wrongLimit','answerLimit','thinkingLimit','plusScore','minusScore','save-config-btn','start-btn'];
+
+            const formElements = ['genre','keyword','difficulty','count','continueOnWrong','wrongLimit','winScore','gameWrongLimit','answerLimit','thinkingLimit','plusScore','minusScore','save-config-btn','start-btn'];
             formElements.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.disabled = !isAmIHost;
@@ -312,24 +250,27 @@
                 }
             });
 
+            // 画面表示制御
             if (state.status === 'LOBBY') {
-                lobbyView.classList.remove('hidden'); quizView.classList.add('hidden'); resultView.classList.add('hidden');
+                lobbyView.classList.remove('hidden'); quizView.classList.add('hidden'); resultView.classList.add('hidden'); gameoverView.classList.add('hidden'); hideToast();
             } else if (state.status === 'QUIZ_TEXT' || state.status === 'QUIZ_ANSWER') {
-                lobbyView.classList.add('hidden'); quizView.classList.remove('hidden'); resultView.classList.add('hidden');
+                lobbyView.classList.add('hidden'); quizView.classList.remove('hidden'); resultView.classList.add('hidden'); gameoverView.classList.add('hidden');
             } else if (state.status === 'QUIZ_RESULT') {
-                lobbyView.classList.add('hidden'); quizView.classList.remove('hidden'); resultView.classList.remove('hidden');
+                lobbyView.classList.add('hidden'); quizView.classList.remove('hidden'); resultView.classList.remove('hidden'); gameoverView.classList.add('hidden');
+            } else if (state.status === 'GAME_OVER') {
+                lobbyView.classList.add('hidden'); quizView.classList.add('hidden'); resultView.classList.add('hidden'); gameoverView.classList.remove('hidden');
             }
         });
 
         socket.on('quiz-start', (data) => {
+            // ★修正2：クイズが開始されたら、残っている「生成中トースト」を確実に隠す
+            hideToast();
+            
             document.getElementById('quiz-number').innerText = `ROUND ${data.index + 1}`;
             buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!!";
-            answerInputArea.classList.add('hidden');
-            answerField.value = "";
-            thinkingTimerDisplay.innerText = "";
-            confirmBtn.disabled = false; confirmBtn.innerText = "確認しました（次の問題へ進む）";
-            confirmStatus.innerText = ""; quizText.innerText = ""; quizFullQuestion.innerText = "";
-            answersLogList.innerHTML = "";
+            answerInputArea.classList.add('hidden'); answerField.value = ""; thinkingTimerDisplay.innerText = "";
+            confirmBtn.disabled = false; confirmBtn.innerText = "確認しました（次へ進む）";
+            confirmStatus.innerText = ""; quizText.innerText = ""; quizFullQuestion.innerText = ""; answersLogList.innerHTML = "";
         });
 
         socket.on('quiz-text-chunk', (data) => { quizText.innerText = data.text; });
@@ -338,8 +279,6 @@
         socket.on('buzzed', (data) => {
             buzzBtn.disabled = true; thinkingTimerDisplay.innerText = "";
             answerInputArea.classList.remove('hidden');
-            triggerBuzzerFlash();
-
             if (data.playerId === socket.id) {
                 buzzerAnnouncement.innerHTML = `<span style="color:var(--success)">🔔 あなたの解答権です！</span>`;
                 answerField.disabled = false; answerField.focus(); submitBtn.disabled = false;
@@ -350,50 +289,42 @@
         });
 
         socket.on('answer-timer', (countdown) => { timerDisplay.innerText = `⏱ 残り ${countdown} 秒`; });
+        socket.on('wrong-mid-quiz', (data) => { triggerJudgmentEffect(false); answerInputArea.classList.add('hidden'); answerField.value = ""; });
 
-        // ★修正2：【問題の途中で誰かが誤答したときの「✕」演出と即時ウィンドウ閉じ】
-        socket.on('wrong-mid-quiz', (data) => {
-            triggerJudgmentEffect(false); // 画面中央に大きな「✕」をフラッシュ
-            answerInputArea.classList.add('hidden'); // 解答入力画面を即座に閉じる
-            answerField.value = "";
-        });
-
-        // ラウンド終了（解説画面）
+        // ラウンド結果画面
         socket.on('quiz-round-result', (data) => {
-            answerField.disabled = true; submitBtn.disabled = true;
-            answerInputArea.classList.add('hidden'); thinkingTimerDisplay.innerText = "";
+            answerField.disabled = true; submitBtn.disabled = true; answerInputArea.classList.add('hidden'); thinkingTimerDisplay.innerText = "";
             
-            // タイムアップや強制スキップ以外の「確定した結果」なら最後の演出を表示
             if(data.answeredPlayer !== "なし" && data.answerText !== "(ホストによる強制スキップ)") {
                 triggerJudgmentEffect(data.isCorrect);
             }
 
-            const statusColor = data.isCorrect ? 'var(--success)' : 'var(--danger)';
-            document.getElementById('round-status').innerHTML = `最終解答者: ${data.answeredPlayer} <span style="color:${statusColor}">${data.isCorrect ? '【 正解 ◯ 】' : '【 不正解 ✕ 】'}</span>`;
+            const statusColor = data.isCorrect === true ? 'var(--success)' : (data.isCorrect === false ? 'var(--danger)' : '#555');
+            let resText = data.isCorrect === true ? '【 正解 ◯ 】' : (data.isCorrect === false ? '【 不正解 ✕ 】' : '【 ノーカウント 】');
+            document.getElementById('round-status').innerHTML = `最終解答者: ${data.answeredPlayer} <span style="color:${statusColor}">${resText}</span>`;
             
             quizFullQuestion.innerText = data.fullQuestion;
             document.getElementById('correct-ans').innerText = data.correctAnswer;
             document.getElementById('quiz-exp').innerText = data.explanation;
 
-            // ★追加4：【解答履歴のリストアップ ＆ ホスト上書き機能の構築】
+            // ★修正3：解答履歴の書き出しに「ノーカウント」ボタンを追加
             answersLogList.innerHTML = "";
             if (data.answersLog && data.answersLog.length > 0) {
                 data.answersLog.forEach((log, index) => {
                     const li = document.createElement('li');
                     li.className = "log-item";
                     
-                    const mark = log.isCorrect ? `<span style="color:var(--success)">◯ 正解</span>` : `<span style="color:var(--danger)">✕ 不正解</span>`;
+                    let mark = log.isCorrect === true ? `<span style="color:var(--success)">◯ 正解</span>` : (log.isCorrect === false ? `<span style="color:var(--danger)">✕ 不正解</span>` : `<span style="color:#8c8c8c;">🛑 ノーカウント</span>`);
                     let controlButtons = "";
                     
-                    // ホストの場合のみ、判定の上書きトグルボタンを表示する
                     if (isAmIHost) {
-                        if (log.isCorrect) {
-                            controlButtons = `<button class="btn btn-danger btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'wrong')">✕ 不正解にする</button>`;
-                        } else {
-                            controlButtons = `<button class="btn btn-success btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'correct')">◯ 正解にする</button>`;
-                        }
+                        // ホスト用：正解・不正解・ノーカウントのトグルスイッチ群
+                        controlButtons = `
+                            ${log.isCorrect !== true ? `<button class="btn btn-success btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'correct')">◯ 正解</button>` : ''}
+                            ${log.isCorrect !== false ? `<button class="btn btn-danger btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'wrong')">✕ 不正解</button>` : ''}
+                            ${log.isCorrect !== null ? `<button class="btn btn-neutral btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'nocount')">⚠️ 帳消</button>` : ''}
+                        `;
                     }
-
                     li.innerHTML = `<div><strong>${log.name}</strong>: 「${log.text}」 → ${mark}</div><div>${controlButtons}</div>`;
                     answersLogList.appendChild(li);
                 });
@@ -407,62 +338,43 @@
             confirmStatus.innerText = `現在 ${confirmedCount} 人が確認完了...`;
         });
 
-        socket.on('game-over', (players) => { alert("全問終了！最終スコアボードを確認してください。"); });
-        socket.on('game-over-winner', (data) => {
-            // 次の問題へ進むボタンを完全にロックし、終了を突きつける
-            confirmBtn.disabled = true;
-            confirmBtn.innerText = "🥇 ゲーム終了 🥇";
-            confirmStatus.innerHTML = `<strong style="color:var(--primary); font-size:16px;">${data.msg}</strong>`;
-            alert(data.msg);
+        // ★修正4：ゲームオーバー通知を受け取った段階で最終結果画面の文言を設定
+        socket.on('game-over', (players) => {
+            // 最多得点者を計算
+            const sorted = Object.values(players).sort((a,b) => b.currentScore - a.currentScore);
+            if(sorted.length > 0 && sorted[0].currentScore > 0) {
+                finalAnnouncement.innerHTML = `🥇 最終勝者: <span style="font-size:24px; color:var(--primary); font-weight:bold;">${sorted[0].name}</span> (${sorted[0].currentScore} 点獲得!)`;
+            } else {
+                finalAnnouncement.innerText = "生存者がいなくなったか、該当者なしでクイズが終了しました。";
+            }
         });
     }
 
-    // ★追加4：ホスト用ピンポイント上書き判定送信関数
     function overrideStatus(playerId, logIndex, newStatus) {
         if (!isAmIHost) return;
-        socket.emit('host-control', {
-            action: 'override-log-status',
-            playerId: playerId,
-            logIndex: logIndex,
-            newStatus: newStatus
-        });
+        socket.emit('host-control', { action: 'override-log-status', playerId, logIndex, newStatus });
     }
-
-    document.getElementById('host-skip-btn').onclick = () => socket.emit('host-control', { action: 'skip' });
 
     document.getElementById('save-config-btn').onclick = () => {
         socket.emit('set-config', {
-            genre: document.getElementById('genre').value,
-            keyword: document.getElementById('keyword').value,
-            difficulty: document.getElementById('difficulty').value,
-            count: parseInt(document.getElementById('count').value),
-            continueOnWrong: document.getElementById('continueOnWrong').value === 'true',
-            wrongLimit: parseInt(document.getElementById('wrongLimit').value),
-            answerLimit: parseInt(document.getElementById('answerLimit').value),
-            thinkingLimit: parseInt(document.getElementById('thinkingLimit').value),
-            plusScore: parseInt(document.getElementById('plusScore').value),
-            minusScore: parseInt(document.getElementById('minusScore').value),
-            winScore: parseInt(document.getElementById('winScore').value),
-            gameWrongLimit: parseInt(document.getElementById('gameWrongLimit').value)
+            genre: document.getElementById('genre').value, keyword: document.getElementById('keyword').value,
+            difficulty: document.getElementById('difficulty').value, count: parseInt(document.getElementById('count').value),
+            continueOnWrong: document.getElementById('continueOnWrong').value === 'true', wrongLimit: parseInt(document.getElementById('wrongLimit').value),
+            winScore: parseInt(document.getElementById('winScore').value), gameWrongLimit: parseInt(document.getElementById('gameWrongLimit').value),
+            answerLimit: parseInt(document.getElementById('answerLimit').value), thinkingLimit: parseInt(document.getElementById('thinkingLimit').value),
+            plusScore: parseInt(document.getElementById('plusScore').value), minusScore: parseInt(document.getElementById('minusScore').value)
         });
     };
 
     document.getElementById('start-btn').onclick = () => socket.emit('game-start');
     buzzBtn.onclick = () => socket.emit('buzz');
+    confirmBtn.onclick = () => { socket.emit('confirm-next'); confirmBtn.disabled = true; confirmBtn.innerText = "他の参加者を待っています..."; };
     
-    confirmBtn.onclick = () => {
-        socket.emit('confirm-next');
-        confirmBtn.disabled = true;
-        confirmBtn.innerText = "他の参加者の確認を待っています...";
-    };
+    // ★修正5：ホストがロビーに戻るためのボタンイベント
+    returnLobbyBtn.onclick = () => { if(isAmIHost) socket.emit('host-control', { action: 'return-to-lobby' }); };
 
-    const sendAnswer = () => { 
-        if (answerField.disabled) return;
-        socket.emit('submit-answer', answerField.value); 
-        answerField.disabled = true; submitBtn.disabled = true;
-    };
-    submitBtn.onclick = sendAnswer;
-    answerField.onkeydown = (e) => { if(e.key === 'Enter') sendAnswer(); };
+    const sendAnswer = () => { if (answerField.disabled) return; socket.emit('submit-answer', answerField.value); answerField.disabled = true; submitBtn.disabled = true; };
+    submitBtn.onclick = sendAnswer; answerField.onkeydown = (e) => { if(e.key === 'Enter') sendAnswer(); };
 </script>
 </body>
 </html>
