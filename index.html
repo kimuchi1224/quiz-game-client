@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プレミアム早押しクイズ - 神アプデ版</title>
+    <title>プレミアム早押しクイズ - フル機能版</title>
     <style>
         :root {
             --primary: #2f54eb; --primary-hover: #1d39c4; --success: #52c41a; --danger: #ff4d4f; --warning: #fa8c16;
@@ -56,7 +56,6 @@
         #judgment-mark { font-size: 140px; font-weight: 900; }
         @keyframes judgmentAnim { 0% { opacity: 0; transform: scale(0.3); } 15% { opacity: 1; transform: scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; } }
 
-        /* 同時押しタイムビジュアル */
         .buzz-timeline { background: #fafafa; border: 1px dashed #ccc; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 13px; }
         .buzz-track { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
     </style>
@@ -94,9 +93,25 @@
                     <small style="color:var(--text-muted); display:block; margin-left:28px;">※ONにすると、Geminiがテキストアートや視覚形状のヒントを含んだ問題を生成します。</small>
                 </div>
 
-                <span style="font-weight:bold; font-size:14px; color:#595959;">競技ルール詳細</span>
-                <div class="form-row" style="margin-top:10px;"><div class="form-group"><label>誤答時の処理</label><select id="continueOnWrong"><option value="true">他の解答者で早押し続行</option><option value="false">即次の問題へ移行</option></select></div><div class="form-group"><label>1問のお手つき制限</label><input type="number" id="wrongLimit" value="2"></div></div>
-                <div class="form-row"><div class="form-group"><label>👑 先取勝利ポイント (点)</label><input type="number" id="winScore" value="30"></div><div class="form-group"><label>💀 累計お手つき失格上限 (回)</label><input type="number" id="gameWrongLimit" value="3"></div></div>
+                <span style="font-weight:bold; font-size:14px; color:#595959;">⏱️ 時間・タイマー設定</span>
+                <div class="form-row" style="margin-top:8px;">
+                    <div class="form-group"><label>解答入力制限時間 (秒)</label><input type="number" id="answerLimit" value="10"></div>
+                    <div class="form-group"><label>読み終わり後シンキング (秒)</label><input type="number" id="thinkingLimit" value="7"></div>
+                </div>
+
+                <span style="font-weight:bold; font-size:14px; color:#595959;">🎯 得点・競技ルール詳細</span>
+                <div class="form-row" style="margin-top:8px;">
+                    <div class="form-group"><label>正解時の加点 (点)</label><input type="number" id="plusScore" value="10"></div>
+                    <div class="form-group"><label>誤答時の減点 (点)</label><input type="number" id="minusScore" value="5"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>👑 先取勝利ポイント (点)</label><input type="number" id="winScore" value="30"></div>
+                    <div class="form-group"><label>💀 累計お手つき失格上限 (回)</label><input type="number" id="gameWrongLimit" value="3"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>1問の中での誤答制限 (回)</label><input type="number" id="wrongLimit" value="2"></div>
+                    <div class="form-group"><label>誤答時の処理</label><select id="continueOnWrong"><option value="true">他の解答者で早押し続行</option><option value="false">即次の問題へ移行</option></select></div>
+                </div>
             </div>
             
             <button id="save-config-btn" class="btn btn-primary" style="margin-bottom:12px; background:#13c2c2;">設定を保存・反映する</button>
@@ -229,11 +244,9 @@
         socket.on('room-update', (state) => {
             isAmIHost = socket.id === state.hostId;
 
-            // 準備確認ロジックのUI適用
             if (isAmIHost) {
                 readyBtn.classList.add('hidden');
                 startBtn.classList.remove('hidden');
-                // 全員準備OKか判定
                 const guests = Object.keys(state.players).filter(id => id !== state.hostId);
                 const isAllReady = guests.length > 0 && guests.every(id => state.isReady[id] === true);
                 if (isAllReady || guests.length === 0) {
@@ -255,7 +268,6 @@
                 }
             }
 
-            // スコアボード描画
             playerTableBody.innerHTML = Object.values(state.players)
                 .map(p => {
                     const isDisqualified = state.isDisqualified[p.id] === true;
@@ -286,7 +298,6 @@
             if (isAmIHost && state.status === 'GAME_OVER') returnLobbyBtn.classList.remove('hidden');
             else returnLobbyBtn.classList.add('hidden');
 
-            // 早押し制御
             const myWrongCount = state.wrongCountsInRound[socket.id] || 0;
             if (state.status === 'QUIZ_TEXT') {
                 if (state.isDisqualified[socket.id]) { buzzBtn.disabled = true; buzzBtn.innerText = "💀 失格中"; }
@@ -294,8 +305,7 @@
                 else { buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!!"; }
             }
 
-            // ホスト設定ロック
-            const formElements = ['genre','keyword','difficulty','count','continueOnWrong','wrongLimit','winScore','gameWrongLimit','isImageMode','save-config-btn'];
+            const formElements = ['genre','keyword','difficulty','count','continueOnWrong','wrongLimit','winScore','gameWrongLimit','isImageMode','answerLimit','thinkingLimit','plusScore','minusScore','save-config-btn'];
             formElements.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.disabled = !isAmIHost;
@@ -350,7 +360,6 @@
             document.getElementById('correct-ans').innerText = data.correctAnswer;
             document.getElementById('quiz-exp').innerText = data.explanation;
 
-            // ★新規：同時押しタイムラグの描画
             if(data.buzzLog && data.buzzLog.length > 0) {
                 buzzLatencyList.innerHTML = data.buzzLog.map((b, idx) => {
                     let text = idx === 0 ? `🥇 ${b.name} (最速BUZZ!)` : `⏱️ ${b.name} (タッチの差！ +${b.delay}秒差)`;
@@ -360,7 +369,6 @@
                 buzzLatencyList.innerHTML = "誰もボタンを押しませんでした。";
             }
 
-            // ログの描画
             answersLogList.innerHTML = "";
             if (data.answersLog && data.answersLog.length > 0) {
                 data.answersLog.forEach((log, index) => {
@@ -411,7 +419,12 @@
             wrongLimit: parseInt(document.getElementById('wrongLimit').value),
             winScore: parseInt(document.getElementById('winScore').value),
             gameWrongLimit: parseInt(document.getElementById('gameWrongLimit').value),
-            isImageMode: document.getElementById('isImageMode').checked // ★チェックボックス値を反映
+            isImageMode: document.getElementById('isImageMode').checked,
+            // ★以下の4つの値をサーバーに送信するように復活・確定
+            answerLimit: parseInt(document.getElementById('answerLimit').value),
+            thinkingLimit: parseInt(document.getElementById('thinkingLimit').value),
+            plusScore: parseInt(document.getElementById('plusScore').value),
+            minusScore: parseInt(document.getElementById('minusScore').value)
         });
     };
 
