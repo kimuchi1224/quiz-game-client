@@ -29,7 +29,10 @@
         .btn-sm { padding: 4px 8px; font-size: 11px; width: auto; border-radius: 4px; margin-left: 4px; }
 
         #quiz-number { font-size: 16px; color: var(--primary); text-transform: uppercase; text-align: center; font-weight: bold; margin-bottom: 5px; }
-        #quiz-text { font-size: 22px; font-weight: 700; min-height: 100px; padding: 24px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; white-space: pre; word-break: break-all; text-align: left; line-height: 1.5; font-family: monospace; }
+        
+        /* ★ 修正箇所: 問題文がはみ出さず、かつ改行を維持して綺麗に自動折り返しされるよう pre-wrap に変更 */
+        #quiz-text { font-size: 22px; font-weight: 700; min-height: 100px; padding: 24px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; white-space: pre-wrap; word-break: break-all; text-align: left; line-height: 1.5; font-family: monospace; }
+        
         #buzz-btn { width: 100%; padding: 24px; font-size: 32px; background: linear-gradient(135deg, #ff7875, #ff4d4f); color: white; border: none; border-radius: var(--radius); font-weight: 800; cursor: pointer; }
         #buzz-btn:disabled { background: #e8e8e8; color: #bfbfbf; cursor: not-allowed; }
 
@@ -139,7 +142,7 @@
             <h3 style="margin-top:0;">ROUND RESULT</h3>
             <p id="round-status"></p>
             <div style="background: rgba(255,255,255,0.7); padding: 14px; border-left: 5px solid var(--primary); border-radius: 4px; margin-bottom:15px;">
-                <strong>問題文の全文:</strong><br><span id="quiz-full-question" style="font-weight:600; white-space:pre;"></span>
+                <strong>問題文の全文:</strong><br><span id="quiz-full-question" style="font-weight:600; white-space:pre-wrap; word-break:break-all; font-family:monospace; display:block; margin-top:5px; line-height:1.5;"></span>
             </div>
             
             <div style="background:#fff7e6; padding:12px; border:1px solid #ffd591; border-radius:6px; margin-bottom:15px;">
@@ -420,7 +423,6 @@
             winScore: parseInt(document.getElementById('winScore').value),
             gameWrongLimit: parseInt(document.getElementById('gameWrongLimit').value),
             isImageMode: document.getElementById('isImageMode').checked,
-            // ★以下の4つの値をサーバーに送信するように復活・確定
             answerLimit: parseInt(document.getElementById('answerLimit').value),
             thinkingLimit: parseInt(document.getElementById('thinkingLimit').value),
             plusScore: parseInt(document.getElementById('plusScore').value),
