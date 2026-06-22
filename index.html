@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プレミアム早押しクイズ - 究極決定版</title>
+    <title>プレミアム早押しクイズ - 神アプデ版</title>
     <style>
         :root {
             --primary: #2f54eb; --primary-hover: #1d39c4; --success: #52c41a; --danger: #ff4d4f; --warning: #fa8c16;
@@ -29,7 +29,7 @@
         .btn-sm { padding: 4px 8px; font-size: 11px; width: auto; border-radius: 4px; margin-left: 4px; }
 
         #quiz-number { font-size: 16px; color: var(--primary); text-transform: uppercase; text-align: center; font-weight: bold; margin-bottom: 5px; }
-        #quiz-text { font-size: 22px; font-weight: 700; min-height: 100px; padding: 24px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; white-space: pre-wrap; word-break: break-all; text-align: left; line-height: 1.5; }
+        #quiz-text { font-size: 22px; font-weight: 700; min-height: 100px; padding: 24px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; white-space: pre; word-break: break-all; text-align: left; line-height: 1.5; font-family: monospace; }
         #buzz-btn { width: 100%; padding: 24px; font-size: 32px; background: linear-gradient(135deg, #ff7875, #ff4d4f); color: white; border: none; border-radius: var(--radius); font-weight: 800; cursor: pointer; }
         #buzz-btn:disabled { background: #e8e8e8; color: #bfbfbf; cursor: not-allowed; }
 
@@ -55,6 +55,10 @@
         .overlay-wrong { animation: judgmentAnim 1.2s ease-out; background: rgba(255, 77, 79, 0.12); }
         #judgment-mark { font-size: 140px; font-weight: 900; }
         @keyframes judgmentAnim { 0% { opacity: 0; transform: scale(0.3); } 15% { opacity: 1; transform: scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* 同時押しタイムビジュアル */
+        .buzz-timeline { background: #fafafa; border: 1px dashed #ccc; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 13px; }
+        .buzz-track { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
     </style>
 </head>
 <body>
@@ -81,13 +85,22 @@
             <div class="form-row"><div class="form-group"><label>難易度</label><select id="difficulty"><option>初級</option><option selected>中級</option><option>上級</option></select></div><div class="form-group"><label>出題問題数</label><input type="number" id="count" value="5"></div></div>
             
             <div style="background:#f9f9f9; padding:14px; border-radius:8px; margin-bottom:16px;">
+                <span style="font-weight:bold; font-size:14px; color:#595959;">👑 特殊ゲームモード設定</span>
+                <div class="form-group" style="margin-top:8px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" id="isImageMode" style="width:20px; height:20px;"> 
+                        <span>🖼️ <strong>「画像・ビジュアル連想クイズ」モードにする</strong></span>
+                    </label>
+                    <small style="color:var(--text-muted); display:block; margin-left:28px;">※ONにすると、Geminiがテキストアートや視覚形状のヒントを含んだ問題を生成します。</small>
+                </div>
+
                 <span style="font-weight:bold; font-size:14px; color:#595959;">競技ルール詳細</span>
                 <div class="form-row" style="margin-top:10px;"><div class="form-group"><label>誤答時の処理</label><select id="continueOnWrong"><option value="true">他の解答者で早押し続行</option><option value="false">即次の問題へ移行</option></select></div><div class="form-group"><label>1問のお手つき制限</label><input type="number" id="wrongLimit" value="2"></div></div>
                 <div class="form-row"><div class="form-group"><label>👑 先取勝利ポイント (点)</label><input type="number" id="winScore" value="30"></div><div class="form-group"><label>💀 累計お手つき失格上限 (回)</label><input type="number" id="gameWrongLimit" value="3"></div></div>
-                <div class="form-row"><div class="form-group"><label>解答制限時間 (秒)</label><input type="number" id="answerLimit" value="10"></div><div class="form-group"><label>読み上げ後猶予時間 (秒)</label><input type="number" id="thinkingLimit" value="7"></div></div>
-                <div class="form-row"><div class="form-group"><label>正解時の加点</label><input type="number" id="plusScore" value="10"></div><div class="form-group"><label>誤答時の減点</label><input type="number" id="minusScore" value="5"></div></div>
             </div>
+            
             <button id="save-config-btn" class="btn btn-primary" style="margin-bottom:12px; background:#13c2c2;">設定を保存・反映する</button>
+            <button id="ready-btn" class="btn btn-warning hidden" style="margin-bottom:12px;">準備完了 (Ready) を切り替える ✋</button>
             <button id="start-btn" class="btn btn-success">この設定でゲームを開始する 🚀</button>
         </div>
 
@@ -111,8 +124,14 @@
             <h3 style="margin-top:0;">ROUND RESULT</h3>
             <p id="round-status"></p>
             <div style="background: rgba(255,255,255,0.7); padding: 14px; border-left: 5px solid var(--primary); border-radius: 4px; margin-bottom:15px;">
-                <strong>問題文の全文:</strong><br><span id="quiz-full-question" style="font-weight:600;"></span>
+                <strong>問題文の全文:</strong><br><span id="quiz-full-question" style="font-weight:600; white-space:pre;"></span>
             </div>
+            
+            <div style="background:#fff7e6; padding:12px; border:1px solid #ffd591; border-radius:6px; margin-bottom:15px;">
+                <strong>⏱️ 1秒以内の早押しタッチの差（ミリ秒集計）:</strong>
+                <div id="buzz-latency-list" class="buzz-timeline"></div>
+            </div>
+
             <div style="margin-bottom:15px;">
                 <strong>正解:</strong> <span id="correct-ans" style="color:var(--success); font-weight:bold;"></span><br>
                 <strong>解説:</strong> <span id="quiz-exp"></span>
@@ -137,9 +156,9 @@
         </div>
 
         <div class="card">
-            <h3 style="margin-top:0; font-size:16px; color:#595959;">📊 リアルタイム・ランキング (管理コマンド付き)</h3>
+            <h3 style="margin-top:0; font-size:16px; color:#595959;">📊 リアルタイム・ランキング</h3>
             <table>
-                <thead><tr><th>解答者</th><th>現在ゲーム得点</th><th>総合スコア</th><th>ホスト操作</th></tr></thead>
+                <thead><tr><th>解答者</th><th>状態</th><th>ゲーム得点</th><th>総合</th><th>操作</th></tr></thead>
                 <tbody id="player-table-body"></tbody>
             </table>
         </div>
@@ -180,17 +199,17 @@
     const finalRankTbody = document.getElementById('final-rank-tbody');
     const podiumWrapper = document.getElementById('podium-wrapper');
     const returnLobbyBtn = document.getElementById('return-lobby-btn');
+    const readyBtn = document.getElementById('ready-btn');
+    const startBtn = document.getElementById('start-btn');
+    const buzzLatencyList = document.getElementById('buzz-latency-list');
 
     function showToast(msg) { toastArea.innerText = msg; toastArea.style.setProperty('display', 'block', 'important'); }
     function hideToast() { toastArea.style.setProperty('display', 'none', 'important'); }
 
     function triggerJudgmentEffect(isCorrect) {
         judgmentOverlay.className = ""; void judgmentOverlay.offsetWidth;
-        if (isCorrect === true) {
-            judgmentMark.innerText = "◯"; judgmentMark.style.color = "var(--success)"; judgmentOverlay.classList.add('overlay-correct');
-        } else if (isCorrect === false) {
-            judgmentMark.innerText = "✕"; judgmentMark.style.color = "var(--danger)"; judgmentOverlay.classList.add('overlay-wrong');
-        }
+        if (isCorrect === true) { judgmentMark.innerText = "◯"; judgmentMark.style.color = "var(--success)"; judgmentOverlay.classList.add('overlay-correct'); }
+        else if (isCorrect === false) { judgmentMark.innerText = "✕"; judgmentMark.style.color = "var(--danger)"; judgmentOverlay.classList.add('overlay-wrong'); }
     }
 
     document.getElementById('join-btn').onclick = () => {
@@ -205,71 +224,83 @@
         socket.on('config-saved', (msg) => { showToast(msg); setTimeout(hideToast, 3000); });
         socket.on('generating-quizzes', (msg) => { showToast(msg); lobbyView.classList.add('hidden'); });
         socket.on('host-override-notice', (msg) => { showToast(msg); setTimeout(hideToast, 4000); });
-        
-        // キックされた本人の画面挙動
-        socket.on('kicked-notice', (msg) => {
-            alert(msg);
-            location.reload(); 
-        });
+        socket.on('kicked-notice', (msg) => { alert(msg); location.reload(); });
 
         socket.on('room-update', (state) => {
             isAmIHost = socket.id === state.hostId;
 
-            // ★追加：ランキング描画に「キック」「ホスト譲渡」のアクションボタンを動的配置
+            // 準備確認ロジックのUI適用
+            if (isAmIHost) {
+                readyBtn.classList.add('hidden');
+                startBtn.classList.remove('hidden');
+                // 全員準備OKか判定
+                const guests = Object.keys(state.players).filter(id => id !== state.hostId);
+                const isAllReady = guests.length > 0 && guests.every(id => state.isReady[id] === true);
+                if (isAllReady || guests.length === 0) {
+                    startBtn.disabled = false;
+                    startBtn.innerText = "全員準備完了！ゲームを開始する 🚀";
+                } else {
+                    startBtn.disabled = true;
+                    startBtn.innerText = "待機中... (全員の準備完了が必要です)";
+                }
+            } else {
+                readyBtn.classList.remove('hidden');
+                startBtn.classList.add('hidden');
+                if (state.isReady[socket.id]) {
+                    readyBtn.className = "btn btn-neutral";
+                    readyBtn.innerText = "準備完了しました (解除する)";
+                } else {
+                    readyBtn.className = "btn btn-warning";
+                    readyBtn.innerText = "準備完了 (Ready) を押す ✋";
+                }
+            }
+
+            // スコアボード描画
             playerTableBody.innerHTML = Object.values(state.players)
                 .map(p => {
                     const isDisqualified = state.isDisqualified[p.id] === true;
-                    const wrongCount = state.gameWrongCounts[p.id] || 0;
+                    const isHost = p.id === state.hostId;
+                    const readyStatus = isHost ? `👑 部屋主` : (state.isReady[p.id] ? `<span style="color:var(--success); font-weight:bold;">✓ Ready</span>` : `<span style="color:var(--text-muted);">未準備</span>`);
                     
                     let badge = isDisqualified 
-                        ? `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">❌ 失格</span>`
-                        : `<span style="background:#efefef; color:#555; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">✕ 累計誤答: ${wrongCount}/${state.config.gameWrongLimit}</span>`;
+                        ? `<br><span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">❌ 失格</span>`
+                        : `<br><span style="color:#8c8c8c; font-size:11px;">✕ お手つき: ${state.gameWrongCounts[p.id] || 0}/${state.config.gameWrongLimit}</span>`;
                     
-                    // ホスト専用のキック・譲渡コマンド
                     let hostActions = "ー";
-                    if (isAmIHost && p.id !== socket.id) {
+                    if (isAmIHost && !isHost) {
                         hostActions = `
-                            <button class="btn btn-warning btn-sm" style="margin-right:4px;" onclick="transferHost('${p.id}', '${p.name}')">👑 譲渡</button>
-                            <button class="btn btn-danger btn-sm" onclick="kickPlayer('${p.id}', '${p.name}')">👢 追放</button>
+                            <button class="btn btn-warning btn-sm" onclick="transferHost('${p.id}', '${p.name}')">譲渡</button>
+                            <button class="btn btn-danger btn-sm" onclick="kickPlayer('${p.id}', '${p.name}')">追放</button>
                         `;
-                    } else if (p.id === state.hostId) {
-                        hostActions = `<span style="font-size:12px; font-weight:bold; color:var(--warning);">👑 部屋主</span>`;
-                    }
+                    } else if (isHost) { hostActions = `👑`; }
 
                     return `<tr style="${isDisqualified ? 'opacity: 0.5; background: #fdf2f2;' : ''}">
-                        <td><strong>${p.name} ${p.id === state.hostId ? '👑' : ''}</strong>${badge}</td>
-                        <td><span style="color:${p.currentScore >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${p.currentScore} 点 / ${state.config.winScore}点</span></td>
-                        <td>${p.totalScore} 点</td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${readyStatus}${badge}</td>
+                        <td><span style="color:var(--primary); font-weight:bold;">${p.currentScore} / ${state.config.winScore}点</span></td>
+                        <td>${p.totalScore}点</td>
                         <td>${hostActions}</td>
                     </tr>`;
                 }).join('');
 
-            if (isAmIHost && state.status === 'GAME_OVER') {
-                returnLobbyBtn.classList.remove('hidden');
-            } else {
-                returnLobbyBtn.classList.add('hidden');
-            }
+            if (isAmIHost && state.status === 'GAME_OVER') returnLobbyBtn.classList.remove('hidden');
+            else returnLobbyBtn.classList.add('hidden');
 
-            // 早押しボタン制御
+            // 早押し制御
             const myWrongCount = state.wrongCountsInRound[socket.id] || 0;
-            const amIDisqualified = state.isDisqualified[socket.id] === true;
             if (state.status === 'QUIZ_TEXT') {
-                if (amIDisqualified) { buzzBtn.disabled = true; buzzBtn.innerText = "💀 あなたは失格しています"; }
-                else if (myWrongCount >= state.config.wrongLimit) { buzzBtn.disabled = true; buzzBtn.innerText = "❌ この問題はお手つき上限"; }
+                if (state.isDisqualified[socket.id]) { buzzBtn.disabled = true; buzzBtn.innerText = "💀 失格中"; }
+                else if (myWrongCount >= state.config.wrongLimit) { buzzBtn.disabled = true; buzzBtn.innerText = "❌ お手つき制限"; }
                 else { buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!!"; }
             }
 
-            // フォーム操作権限
-            const formElements = ['genre','keyword','difficulty','count','continueOnWrong','wrongLimit','winScore','gameWrongLimit','answerLimit','thinkingLimit','plusScore','minusScore','save-config-btn','start-btn'];
+            // ホスト設定ロック
+            const formElements = ['genre','keyword','difficulty','count','continueOnWrong','wrongLimit','winScore','gameWrongLimit','isImageMode','save-config-btn'];
             formElements.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.disabled = !isAmIHost;
-                if((id === 'save-config-btn' || id === 'start-btn') && el) {
-                    if(isAmIHost) el.classList.remove('hidden'); else el.classList.add('hidden');
-                }
             });
 
-            // 画面コンポーネントの表示切替
             if (state.status === 'LOBBY') {
                 lobbyView.classList.remove('hidden'); quizView.classList.add('hidden'); resultView.classList.add('hidden'); gameoverView.classList.add('hidden');
             } else if (state.status === 'QUIZ_TEXT' || state.status === 'QUIZ_ANSWER') {
@@ -286,21 +317,12 @@
             document.getElementById('quiz-number').innerText = `ROUND ${data.index + 1}`;
             buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!!";
             answerInputArea.classList.add('hidden'); answerField.value = ""; thinkingTimerDisplay.innerText = "";
-            confirmBtn.disabled = false; confirmBtn.innerText = "確認しました（次へ進む）";
-            confirmStatus.innerText = ""; quizText.innerText = "問題生成完了。読み込み中..."; quizFullQuestion.innerText = ""; answersLogList.innerHTML = "";
+            confirmBtn.disabled = false; confirmBtn.innerText = "確認（次へ）"; confirmStatus.innerText = "";
+            quizText.innerText = ""; quizFullQuestion.innerText = ""; answersLogList.innerHTML = ""; buzzLatencyList.innerHTML = "";
         });
 
-        // ★再実装：文字送りチャンクの受信
         socket.on('quiz-text-chunk', (data) => { quizText.innerText = data.text; });
-        
-        // ★再実装：シンキングタイム・カウントダウン表示
-        socket.on('thinking-timer', (countdown) => { 
-            if(countdown > 0) {
-                thinkingTimerDisplay.innerText = `⏳ シンキングタイム... 残り ${countdown} 秒`; 
-            } else {
-                thinkingTimerDisplay.innerText = "⌛ タイムアウト！";
-            }
-        });
+        socket.on('thinking-timer', (countdown) => { thinkingTimerDisplay.innerText = countdown > 0 ? `⏳ シンキングタイム残り ${countdown} 秒` : "⌛ 終了"; });
 
         socket.on('buzzed', (data) => {
             buzzBtn.disabled = true; thinkingTimerDisplay.innerText = "";
@@ -314,93 +336,70 @@
             }
         });
 
-        // ★再実装：回答入力時間のカウントダウン表示
-        socket.on('answer-timer', (countdown) => { timerDisplay.innerText = `⏱ 残り ${countdown} 秒`; });
-        
+        socket.on('answer-timer', (countdown) => { timerDisplay.innerText = `⏱ あと ${countdown} 秒`; });
         socket.on('wrong-mid-quiz', (data) => { triggerJudgmentEffect(false); answerInputArea.classList.add('hidden'); answerField.value = ""; });
 
         socket.on('quiz-round-result', (data) => {
-            answerField.disabled = true; submitBtn.disabled = true; answerInputArea.classList.add('hidden'); thinkingTimerDisplay.innerText = "";
-            
-            if(data.answeredPlayer !== "なし" && data.answerText !== "(ホストによる強制スキップ)") {
-                triggerJudgmentEffect(data.isCorrect);
-            }
+            answerField.disabled = true; submitBtn.disabled = true; answerInputArea.classList.add('hidden');
+            if(data.answeredPlayer !== "なし") triggerJudgmentEffect(data.isCorrect);
 
             const statusColor = data.isCorrect === true ? 'var(--success)' : (data.isCorrect === false ? 'var(--danger)' : '#555');
-            let resText = data.isCorrect === true ? '【 正解 ◯ 】' : (data.isCorrect === false ? '【 不正解 ✕ 】' : '【 ノーカウント 】');
-            document.getElementById('round-status').innerHTML = `最終解答者: ${data.answeredPlayer} <span style="color:${statusColor}">${resText}</span>`;
+            document.getElementById('round-status').innerHTML = `最終解答者: ${data.answeredPlayer} <span style="color:${statusColor}">${data.isCorrect === true ? '【正解】' : (data.isCorrect === false ? '【不正解】' : '【タイムアップ】')}</span>`;
             
             quizFullQuestion.innerText = data.fullQuestion;
             document.getElementById('correct-ans').innerText = data.correctAnswer;
             document.getElementById('quiz-exp').innerText = data.explanation;
 
+            // ★新規：同時押しタイムラグの描画
+            if(data.buzzLog && data.buzzLog.length > 0) {
+                buzzLatencyList.innerHTML = data.buzzLog.map((b, idx) => {
+                    let text = idx === 0 ? `🥇 ${b.name} (最速BUZZ!)` : `⏱️ ${b.name} (タッチの差！ +${b.delay}秒差)`;
+                    return `<div class="buzz-track" style="${idx === 0 ? 'font-weight:bold; color:var(--primary);' : ''}"><span>${text}</span></div>`;
+                }).join('');
+            } else {
+                buzzLatencyList.innerHTML = "誰もボタンを押しませんでした。";
+            }
+
+            // ログの描画
             answersLogList.innerHTML = "";
             if (data.answersLog && data.answersLog.length > 0) {
                 data.answersLog.forEach((log, index) => {
-                    const li = document.createElement('li');
-                    li.className = "log-item";
-                    let mark = log.isCorrect === true ? `<span style="color:var(--success)">◯ 正解</span>` : (log.isCorrect === false ? `<span style="color:var(--danger)">✕ 不正解</span>` : `<span style="color:#8c8c8c;">🛑 ノーカウント</span>`);
-                    let controlButtons = "";
-                    if (isAmIHost) {
-                        controlButtons = `
-                            ${log.isCorrect !== true ? `<button class="btn btn-success btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'correct')">◯ 正解</button>` : ''}
-                            ${log.isCorrect !== false ? `<button class="btn btn-danger btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'wrong')">✕ 不正解</button>` : ''}
-                            ${log.isCorrect !== null ? `<button class="btn btn-neutral btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'nocount')">⚠️ 帳消</button>` : ''}
-                        `;
-                    }
+                    const li = document.createElement('li'); li.className = "log-item";
+                    let mark = log.isCorrect === true ? `<span style="color:var(--success)">◯ 正解</span>` : (log.isCorrect === false ? `<span style="color:var(--danger)">✕ 不正解</span>` : `🛑 スキップ`);
+                    let controlButtons = isAmIHost ? `
+                        ${log.isCorrect !== true ? `<button class="btn btn-success btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'correct')">◯ 正解</button>` : ''}
+                        ${log.isCorrect !== false ? `<button class="btn btn-danger btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'wrong')">✕ 不正解</button>` : ''}
+                    ` : "";
                     li.innerHTML = `<div><strong>${log.name}</strong>: 「${log.text}」 → ${mark}</div><div>${controlButtons}</div>`;
                     answersLogList.appendChild(li);
                 });
-            } else {
-                answersLogList.innerHTML = `<li style="color:var(--text-muted); font-size:14px;">（解答ログはありません）</li>`;
-            }
+            } else { answersLogList.innerHTML = `<li>ログはありません</li>`; }
         });
 
         socket.on('confirm-update', (confirmedPlayers) => {
-            const confirmedCount = Object.keys(confirmedPlayers).length;
-            confirmStatus.innerText = `現在 ${confirmedCount} 人が確認完了...`;
+            confirmStatus.innerText = `現在 ${Object.keys(confirmedPlayers).length} 人が確認完了...`;
         });
 
         socket.on('game-over', (players) => {
             hideToast();
             const sorted = Object.values(players).sort((a,b) => b.currentScore - a.currentScore);
-            
-            let podiumHtml = "";
-            const p2 = sorted[1] ? `${sorted[1].name}<br><small>${sorted[1].currentScore}点</small>` : "ー";
             const p1 = sorted[0] ? `${sorted[0].name}<br><small>${sorted[0].currentScore}点</small>` : "ー";
+            const p2 = sorted[1] ? `${sorted[1].name}<br><small>${sorted[1].currentScore}点</small>` : "ー";
             const p3 = sorted[2] ? `${sorted[2].name}<br><small>${sorted[2].currentScore}点</small>` : "ー";
-
-            podiumHtml += `<div class="podium-rank rank-2">🥈 2位<br>${p2}</div>`;
-            podiumHtml += `<div class="podium-rank rank-1">🥇 1位<br>${p1}</div>`;
-            podiumHtml += `<div class="podium-rank rank-3">🥉 3位<br>${p3}</div>`;
-            podiumWrapper.innerHTML = podiumHtml;
-
-            finalRankTbody.innerHTML = sorted.map((p, idx) => {
-                return `<tr><td><strong>${idx + 1} 位</strong></td><td>${p.name}</td><td><span style="color:var(--primary); font-weight:bold;">${p.currentScore} 点</span></td></tr>`;
-            }).join('');
+            podiumWrapper.innerHTML = `
+                <div class="podium-rank rank-2">🥈 2位<br>${p2}</div>
+                <div class="podium-rank rank-1">🥇 1位<br>${p1}</div>
+                <div class="podium-rank rank-3">🥉 3位<br>${p3}</div>
+            `;
+            finalRankTbody.innerHTML = sorted.map((p, idx) => `<tr><td><strong>${idx + 1}位</strong></td><td>${p.name}</td><td>${p.currentScore}点</td></tr>`).join('');
         });
     }
 
-    // ★追加機能1用：キックの実行
-    function kickPlayer(targetId, targetName) {
-        if (!isAmIHost) return;
-        if (confirm(`本当に ${targetName} さんを部屋から追放しますか？`)) {
-            socket.emit('host-control', { action: 'kick-player', targetId });
-        }
-    }
+    readyBtn.onclick = () => socket.emit('toggle-ready');
 
-    // ★追加機能2用：ホスト譲渡の実行
-    function transferHost(targetId, targetName) {
-        if (!isAmIHost) return;
-        if (confirm(`本当に ${targetName} さんにホスト権限(部屋主)を譲渡しますか？\n（譲渡後、あなた自身はホスト権限を失います）`)) {
-            socket.emit('host-control', { action: 'transfer-host', targetId });
-        }
-    }
-
-    function overrideStatus(playerId, logIndex, newStatus) {
-        if (!isAmIHost) return;
-        socket.emit('host-control', { action: 'override-log-status', playerId, logIndex, newStatus });
-    }
+    function kickPlayer(targetId, targetName) { if (isAmIHost && confirm(`${targetName} をキックしますか？`)) socket.emit('host-control', { action: 'kick-player', targetId }); }
+    function transferHost(targetId, targetName) { if (isAmIHost && confirm(`${targetName} にホストを譲渡しますか？`)) socket.emit('host-control', { action: 'transfer-host', targetId }); }
+    function overrideStatus(playerId, logIndex, newStatus) { if (isAmIHost) socket.emit('host-control', { action: 'override-log-status', playerId, logIndex, newStatus }); }
 
     document.getElementById('save-config-btn').onclick = () => {
         socket.emit('set-config', {
@@ -412,16 +411,13 @@
             wrongLimit: parseInt(document.getElementById('wrongLimit').value),
             winScore: parseInt(document.getElementById('winScore').value),
             gameWrongLimit: parseInt(document.getElementById('gameWrongLimit').value),
-            answerLimit: parseInt(document.getElementById('answerLimit').value),
-            thinkingLimit: parseInt(document.getElementById('thinkingLimit').value),
-            plusScore: parseInt(document.getElementById('plusScore').value),
-            minusScore: parseInt(document.getElementById('minusScore').value)
+            isImageMode: document.getElementById('isImageMode').checked // ★チェックボックス値を反映
         });
     };
 
-    document.getElementById('start-btn').onclick = () => socket.emit('game-start');
+    startBtn.onclick = () => socket.emit('game-start');
     buzzBtn.onclick = () => socket.emit('buzz');
-    confirmBtn.onclick = () => { socket.emit('confirm-next'); confirmBtn.disabled = true; confirmBtn.innerText = "他の参加者を待っています..."; };
+    confirmBtn.onclick = () => { socket.emit('confirm-next'); confirmBtn.disabled = true; confirmBtn.innerText = "待機中..."; };
     returnLobbyBtn.onclick = () => { if(isAmIHost) socket.emit('host-control', { action: 'return-to-lobby' }); };
 
     const sendAnswer = () => { if (answerField.disabled) return; socket.emit('submit-answer', answerField.value); answerField.disabled = true; submitBtn.disabled = true; };
