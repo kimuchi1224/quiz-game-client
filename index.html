@@ -29,8 +29,6 @@
         .btn-sm { padding: 4px 8px; font-size: 11px; width: auto; border-radius: 4px; margin-left: 4px; }
 
         #quiz-number { font-size: 16px; color: var(--primary); text-transform: uppercase; text-align: center; font-weight: bold; margin-bottom: 5px; }
-        
-        /* ★ 修正箇所: 問題文がはみ出さず、かつ改行を維持して綺麗に自動折り返しされるよう pre-wrap に変更 */
         #quiz-text { font-size: 22px; font-weight: 700; min-height: 100px; padding: 24px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; white-space: pre-wrap; word-break: break-all; text-align: left; line-height: 1.5; font-family: monospace; }
         
         #buzz-btn { width: 100%; padding: 24px; font-size: 32px; background: linear-gradient(135deg, #ff7875, #ff4d4f); color: white; border: none; border-radius: var(--radius); font-weight: 800; cursor: pointer; }
@@ -247,6 +245,23 @@
         socket.on('room-update', (state) => {
             isAmIHost = socket.id === state.hostId;
 
+            /* ★ 修正箇所: ホストが設定を保存した際、ゲスト(非ホスト)側の画面上の入力フォーム表示もリアルタイムに同期・更新する */
+            if (!isAmIHost && state.config) {
+                if (document.getElementById('genre')) document.getElementById('genre').value = state.config.genre || "一般";
+                if (document.getElementById('keyword')) document.getElementById('keyword').value = state.config.keyword || "";
+                if (document.getElementById('difficulty')) document.getElementById('difficulty').value = state.config.difficulty || "中級";
+                if (document.getElementById('count')) document.getElementById('count').value = state.config.count || 5;
+                if (document.getElementById('continueOnWrong')) document.getElementById('continueOnWrong').value = String(state.config.continueOnWrong);
+                if (document.getElementById('wrongLimit')) document.getElementById('wrongLimit').value = state.config.wrongLimit || 2;
+                if (document.getElementById('winScore')) document.getElementById('winScore').value = state.config.winScore || 30;
+                if (document.getElementById('gameWrongLimit')) document.getElementById('gameWrongLimit').value = state.config.gameWrongLimit || 3;
+                if (document.getElementById('isImageMode')) document.getElementById('isImageMode').checked = !!state.config.isImageMode;
+                if (document.getElementById('answerLimit')) document.getElementById('answerLimit').value = state.config.answerLimit || 10;
+                if (document.getElementById('thinkingLimit')) document.getElementById('thinkingLimit').value = state.config.thinkingLimit || 7;
+                if (document.getElementById('plusScore')) document.getElementById('plusScore').value = state.config.plusScore || 10;
+                if (document.getElementById('minusScore')) document.getElementById('minusScore').value = state.config.minusScore || 5;
+            }
+
             if (isAmIHost) {
                 readyBtn.classList.add('hidden');
                 startBtn.classList.remove('hidden');
@@ -377,10 +392,14 @@
                 data.answersLog.forEach((log, index) => {
                     const li = document.createElement('li'); li.className = "log-item";
                     let mark = log.isCorrect === true ? `<span style="color:var(--success)">◯ 正解</span>` : (log.isCorrect === false ? `<span style="color:var(--danger)">✕ 不正解</span>` : `🛑 スキップ`);
+                    
+                    /* ★ 修正箇所: 「帳消し/クリア」用ボタンを含む、判定管理用コントロールボタン群を完全復活 */
                     let controlButtons = isAmIHost ? `
                         ${log.isCorrect !== true ? `<button class="btn btn-success btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'correct')">◯ 正解</button>` : ''}
                         ${log.isCorrect !== false ? `<button class="btn btn-danger btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'wrong')">✕ 不正解</button>` : ''}
+                        <button class="btn btn-neutral btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'clear')">🔄 帳消し</button>
                     ` : "";
+                    
                     li.innerHTML = `<div><strong>${log.name}</strong>: 「${log.text}」 → ${mark}</div><div>${controlButtons}</div>`;
                     answersLogList.appendChild(li);
                 });
