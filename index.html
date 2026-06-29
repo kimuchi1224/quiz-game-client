@@ -57,8 +57,12 @@
         #judgment-mark { font-size: 140px; font-weight: 900; }
         @keyframes judgmentAnim { 0% { opacity: 0; transform: scale(0.3); } 15% { opacity: 1; transform: scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; } }
 
-        .buzz-timeline { background: #fafafa; border: 1px dashed #ccc; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 13px; }
-        .buzz-track { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
+        /* タイライン表示用のスタイル調整 */
+        .buzz-timeline { background: #fafafa; border: 1px dashed #ccc; padding: 14px; border-radius: 6px; margin-top: 10px; font-size: 14px; font-family: monospace; line-height: 1.6; }
+        .buzz-round-block { margin-bottom: 12px; }
+        .buzz-round-block:last-child { margin-bottom: 0; }
+        .buzz-track-master { font-weight: bold; color: var(--primary); }
+        .buzz-track-slave { padding-left: 20px; color: #555; }
     </style>
 </head>
 <body>
@@ -144,7 +148,7 @@
             </div>
             
             <div style="background:#fff7e6; padding:12px; border:1px solid #ffd591; border-radius:6px; margin-bottom:15px;">
-                <strong>⏱️ 1秒以内の早押しタッチの差（ミリ秒集計）:</strong>
+                <strong>⏱️ 早押しコンマ秒差タイマー（ミリ秒集計）:</strong>
                 <div id="buzz-latency-list" class="buzz-timeline"></div>
             </div>
 
@@ -245,7 +249,6 @@
         socket.on('room-update', (state) => {
             isAmIHost = socket.id === state.hostId;
 
-            /* ★ 修正箇所: ホストが設定を保存した際、ゲスト(非ホスト)側の画面上の入力フォーム表示もリアルタイムに同期・更新する */
             if (!isAmIHost && state.config) {
                 if (document.getElementById('genre')) document.getElementById('genre').value = state.config.genre || "一般";
                 if (document.getElementById('keyword')) document.getElementById('keyword').value = state.config.keyword || "";
@@ -378,11 +381,41 @@
             document.getElementById('correct-ans').innerText = data.correctAnswer;
             document.getElementById('quiz-exp').innerText = data.explanation;
 
-            if(data.buzzLog && data.buzzLog.length > 0) {
-                buzzLatencyList.innerHTML = data.buzzLog.map((b, idx) => {
-                    let text = idx === 0 ? `🥇 ${b.name} (最速BUZZ!)` : `⏱️ ${b.name} (タッチの差！ +${b.delay}秒差)`;
-                    return `<div class="buzz-track" style="${idx === 0 ? 'font-weight:bold; color:var(--primary);' : ''}"><span>${text}</span></div>`;
-                }).join('');
+            /* ★ 修正箇所: 1問の中で誤答が発生し複数回BUZZが発生した場合でも、回数(ターン)ごとにコンマ秒差を綺麗に構造化表示する */
+            if (data.buzzLog && data.buzzLog.length > 0) {
+                // 1. 各データをBUZZの回数(ターン)ごとにグループ分けする
+                // バックエンドから送られてくるデータの `buzzRound` または `attempt` プロパティを参照。無ければ一律1回目とする
+                const groupedAttempts = {};
+                data.buzzLog.forEach(b => {
+                    const roundNum = b.buzzRound || b.attempt || 1;
+                    if (!groupedAttempts[roundNum]) {
+                        groupedAttempts[roundNum] = [];
+                    }
+                    groupedAttempts[roundNum].push(b);
+                });
+
+                // 2. 分割したグループごとにHTMLを組み立てていく
+                let timelineHtml = "";
+                Object.keys(groupedAttempts).sort((a, b) => a - b).forEach(roundNum => {
+                    const attempts = groupedAttempts[roundNum];
+                    if (attempts.length === 0) return;
+
+                    timelineHtml += `<div class="buzz-round-block">`;
+                    // 各BUZZターンの中での「最速タッチプレイヤー」を先頭に据える
+                    const leader = attempts[0];
+                    timelineHtml += `<div class="buzz-track-master">${roundNum}回目 最速BUZZ：${leader.name}</div>`;
+
+                    // 同じターンにミリ秒の差でボタンを押していた後続プレイヤーを計算・表示
+                    for (let i = 1; i < attempts.length; i++) {
+                        const follower = attempts[i];
+                        // タイムスタンプや遅延差(delay)を適用。未計算の場合は相手との相対差をフォールバック算出
+                        let delayText = follower.delay !== undefined ? follower.delay : ((follower.timestamp - leader.timestamp) / 1000).toFixed(2);
+                        timelineHtml += `<div class="buzz-track-slave">   +${delayText}秒差：${follower.name}</div>`;
+                    }
+                    timelineHtml += `</div>`;
+                });
+
+                buzzLatencyList.innerHTML = timelineHtml;
             } else {
                 buzzLatencyList.innerHTML = "誰もボタンを押しませんでした。";
             }
@@ -393,7 +426,6 @@
                     const li = document.createElement('li'); li.className = "log-item";
                     let mark = log.isCorrect === true ? `<span style="color:var(--success)">◯ 正解</span>` : (log.isCorrect === false ? `<span style="color:var(--danger)">✕ 不正解</span>` : `🛑 スキップ`);
                     
-                    /* ★ 修正箇所: 「帳消し/クリア」用ボタンを含む、判定管理用コントロールボタン群を完全復活 */
                     let controlButtons = isAmIHost ? `
                         ${log.isCorrect !== true ? `<button class="btn btn-success btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'correct')">◯ 正解</button>` : ''}
                         ${log.isCorrect !== false ? `<button class="btn btn-danger btn-sm" onclick="overrideStatus('${log.playerId}', ${index}, 'wrong')">✕ 不正解</button>` : ''}
