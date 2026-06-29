@@ -427,9 +427,9 @@
                     
                     // タイトルの出し分け（1回目か、それ以降の仕切り直し時か）
                     if (roundNum === 1) {
-                        timelineHtml += `<div class="buzz-track-master">⏱️ 1回目の早押し 最速BUZZ：${leader.name}</div>`;
+                        timelineHtml += `<div class="buzz-track-master">1回目 最速BUZZ：${leader.name}</div>`;
                     } else {
-                        timelineHtml += `<div class="buzz-track-master">🔄 ${roundNum}回目の早押し (仕切り直し) 最速BUZZ：${leader.name}</div>`;
+                        timelineHtml += `<div class="buzz-track-master">${roundNum}回目 最速BUZZ：${leader.name}</div>`;
                     }
 
                     // 2人目以降（同時押し）のループ処理
