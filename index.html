@@ -192,6 +192,7 @@
 
     let socket = null;
     let isAmIHost = false;
+    let hasIAlreadyBuzzedInThisTurn = false; // 自分がその回にすでに押したかを追跡
 
     const toastArea = document.getElementById('toast-area');
     const welcomeView = document.getElementById('welcome-view');
@@ -322,7 +323,11 @@
             if (state.status === 'QUIZ_TEXT') {
                 if (state.isDisqualified[socket.id]) { buzzBtn.disabled = true; buzzBtn.innerText = "💀 失格中"; }
                 else if (myWrongCount >= state.config.wrongLimit) { buzzBtn.disabled = true; buzzBtn.innerText = "❌ お手つき制限"; }
-                else { buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!!"; }
+                else if (!hasIAlreadyBuzzedInThisTurn) { 
+                    // ★ 修正箇所: 自分がまだ押していなければ、誰かが早押しした後でも1秒間はボタンが活性化したままになる
+                    buzzBtn.disabled = false; 
+                    buzzBtn.innerText = "BUZZ!!"; 
+                }
             }
 
             const formElements = ['genre','keyword','difficulty','count','continueOnWrong','wrongLimit','winScore','gameWrongLimit','isImageMode','answerLimit','thinkingLimit','plusScore','minusScore','save-config-btn'];
@@ -346,6 +351,7 @@
             hideToast();
             document.getElementById('quiz-number').innerText = `ROUND ${data.index + 1}`;
             buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!!";
+            hasIAlreadyBuzzedInThisTurn = false; // 新しい問題でフラグをリセット
             answerInputArea.classList.add('hidden'); answerField.value = ""; thinkingTimerDisplay.innerText = "";
             confirmBtn.disabled = false; confirmBtn.innerText = "確認（次へ）"; confirmStatus.innerText = "";
             quizText.innerText = ""; quizFullQuestion.innerText = ""; answersLogList.innerHTML = ""; buzzLatencyList.innerHTML = "";
@@ -355,8 +361,16 @@
         socket.on('thinking-timer', (countdown) => { thinkingTimerDisplay.innerText = countdown > 0 ? `⏳ シンキングタイム残り ${countdown} 秒` : "⌛ 終了"; });
 
         socket.on('buzzed', (data) => {
-            buzzBtn.disabled = true; thinkingTimerDisplay.innerText = "";
+            thinkingTimerDisplay.innerText = "";
             answerInputArea.classList.remove('hidden');
+            
+            // ★ 修正箇所: 誰かがBUZZしたイベントが来ても、即座にボタンをdisableにせず「1000ms（1秒）」のタイマーをかける
+            // これにより、サーバー側の1秒間猶予ウィンドウをフロントエンド側でも開いたままにできる
+            setTimeout(() => {
+                buzzBtn.disabled = true;
+                if (!hasIAlreadyBuzzedInThisTurn) buzzBtn.innerText = "🛑 受付終了";
+            }, 1000);
+
             if (data.playerId === socket.id) {
                 buzzerAnnouncement.innerHTML = `<span style="color:var(--success)">🔔 あなたの解答権です！</span>`;
                 answerField.disabled = false; answerField.focus(); submitBtn.disabled = false;
@@ -367,7 +381,12 @@
         });
 
         socket.on('answer-timer', (countdown) => { timerDisplay.innerText = `⏱ あと ${countdown} 秒`; });
-        socket.on('wrong-mid-quiz', (data) => { triggerJudgmentEffect(false); answerInputArea.classList.add('hidden'); answerField.value = ""; });
+        socket.on('wrong-mid-quiz', (data) => { 
+            triggerJudgmentEffect(false); 
+            answerInputArea.classList.add('hidden'); 
+            answerField.value = ""; 
+            hasIAlreadyBuzzedInThisTurn = false; // クイズ続行用に、次のBUZZターンのフラグをリセット
+        });
 
         socket.on('quiz-round-result', (data) => {
             answerField.disabled = true; submitBtn.disabled = true; answerInputArea.classList.add('hidden');
@@ -380,26 +399,17 @@
             document.getElementById('correct-ans').innerText = data.correctAnswer;
             document.getElementById('quiz-exp').innerText = data.explanation;
 
-            /* ★ 修正・強化箇所: バックエンドの変数に依存せず、時系列ログから自動で何回目のBUZZかを判別・構造化する */
             if (data.buzzLog && data.buzzLog.length > 0) {
                 const groupedAttempts = [];
                 let currentAttempt = [];
                 let lastTimestamp = 0;
 
-                // サーバーから送られてくるフラットな全早押しログ（時系列順）をループ
                 data.buzzLog.forEach((b) => {
-                    // もしタイムスタンプ（ミリ秒）が存在する場合の処理
                     const currentTimestamp = b.timestamp || 0;
-
-                    // 【自動仕分けロジック】
-                    // 1つ前のログよりタイムスタンプが「過去」に戻っている、
-                    // またはタッチの秒差プロパティ(delay)が0（＝その回の最速者）の時、または前回のBUZZから1秒以上開いている場合は
-                    // 「クイズが再開された後の次の新しいBUZZターン（2回目など）」と自動判定する
                     if (currentAttempt.length > 0 && (b.delay === 0 || b.delay === "0.00" || (currentTimestamp > 0 && currentTimestamp < lastTimestamp) || (currentTimestamp - lastTimestamp > 1200))) {
                         groupedAttempts.push(currentAttempt);
                         currentAttempt = [];
                     }
-
                     currentAttempt.push(b);
                     if (currentTimestamp > 0) lastTimestamp = currentTimestamp;
                 });
@@ -407,7 +417,6 @@
                     groupedAttempts.push(currentAttempt);
                 }
 
-                // 指示されたレイアウト通りにHTML文字列を生成
                 let timelineHtml = "";
                 groupedAttempts.forEach((attempts, index) => {
                     const roundNum = index + 1;
@@ -416,11 +425,9 @@
                     timelineHtml += `<div class="buzz-round-block">`;
                     timelineHtml += `<div class="buzz-track-master">${roundNum}回目 最速BUZZ：${leader.name}</div>`;
 
-                    // 同一ターン内でのコンマ秒差の追随者を表示
                     for (let i = 1; i < attempts.length; i++) {
                         const follower = attempts[i];
                         let delayVal = follower.delay;
-                        // delayプロパティが不正、もしくは1巡目の最速者を基準にしてしまっている場合は、このターンのリーダーとの差を動的算出
                         if (delayVal === undefined || leader.timestamp && follower.timestamp) {
                             delayVal = ((follower.timestamp - leader.timestamp) / 1000).toFixed(2);
                         }
@@ -496,7 +503,15 @@
     };
 
     startBtn.onclick = () => socket.emit('game-start');
-    buzzBtn.onclick = () => socket.emit('buzz');
+    
+    // ★ 修正箇所: 自分がボタンを押した瞬間の処理
+    buzzBtn.onclick = () => {
+        hasIAlreadyBuzzedInThisTurn = true; // このターンはもう押したという個人フラグ
+        buzzBtn.disabled = true;            // 自分の画面では連打を防ぐために即disable化
+        buzzBtn.innerText = "BUZZ済";
+        socket.emit('buzz');
+    };
+
     confirmBtn.onclick = () => { socket.emit('confirm-next'); confirmBtn.disabled = true; confirmBtn.innerText = "待機中..."; };
     returnLobbyBtn.onclick = () => { if(isAmIHost) socket.emit('host-control', { action: 'return-to-lobby' }); };
 
