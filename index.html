@@ -538,8 +538,7 @@
 
     // ★ 修正・追加箇所: キーボード（スペースキー）のグローバル監視
     window.addEventListener('keydown', (e) => {
-        // スペースキーが押された、かつクイズ出題中画面 (`QUIZ_TEXT`) の時のみ発火
-        if (e.code === 'Space' && currentRoomStatus === 'QUIZ_TEXT') {
+        if (e.code === 'Space' && answerField.disabled) {
             // アクティブな要素が、文字入力フィールド（ニックネームや解答欄）の時は誤爆防止のため無視
             if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) {
                 return;
