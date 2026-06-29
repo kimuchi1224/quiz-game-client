@@ -400,42 +400,57 @@
             document.getElementById('quiz-exp').innerText = data.explanation;
 
             if (data.buzzLog && data.buzzLog.length > 0) {
-                const groupedAttempts = [];
-                let currentAttempt = [];
-                let lastTimestamp = 0;
-
+                // 1. バックエンドから届いた session ID ごとにグループ化する
+                // 例: { 0: [Aさん, Bさん], 1: [Cさん, Dさん] }
+                const groupedAttempts = {};
                 data.buzzLog.forEach((b) => {
-                    const currentTimestamp = b.timestamp || 0;
-                    if (currentAttempt.length > 0 && (b.delay === 0 || b.delay === "0.00" || (currentTimestamp > 0 && currentTimestamp < lastTimestamp) || (currentTimestamp - lastTimestamp > 1200))) {
-                        groupedAttempts.push(currentAttempt);
-                        currentAttempt = [];
+                    const sessionNum = b.session !== undefined ? b.session : 0;
+                    if (!groupedAttempts[sessionNum]) {
+                        groupedAttempts[sessionNum] = [];
                     }
-                    currentAttempt.push(b);
-                    if (currentTimestamp > 0) lastTimestamp = currentTimestamp;
+                    groupedAttempts[sessionNum].push(b);
                 });
-                if (currentAttempt.length > 0) {
-                    groupedAttempts.push(currentAttempt);
-                }
 
                 let timelineHtml = "";
-                groupedAttempts.forEach((attempts, index) => {
-                    const roundNum = index + 1;
+                let roundNum = 1;
+
+                // 2. セッションごとにループを回してHTMLを組み立てる
+                // ※オブジェクトのキー（セッション番号順）に処理します
+                Object.keys(groupedAttempts).sort((a, b) => a - b).forEach((sessionKey) => {
+                    const attempts = groupedAttempts[sessionKey];
+                    if (attempts.length === 0) return;
+
+                    // そのセッション（ターン）での最速解答者（必ず配列の先頭）
                     const leader = attempts[0];
                     
                     timelineHtml += `<div class="buzz-round-block">`;
-                    timelineHtml += `<div class="buzz-track-master">${roundNum}回目 最速BUZZ：${leader.name}</div>`;
+                    
+                    // タイトルの出し分け（1回目か、それ以降の仕切り直し時か）
+                    if (roundNum === 1) {
+                        timelineHtml += `<div class="buzz-track-master">⏱️ 1回目の早押し 最速BUZZ：${leader.name}</div>`;
+                    } else {
+                        timelineHtml += `<div class="buzz-track-master">🔄 ${roundNum}回目の早押し (仕切り直し) 最速BUZZ：${leader.name}</div>`;
+                    }
 
+                    // 2人目以降（同時押し）のループ処理
                     for (let i = 1; i < attempts.length; i++) {
                         const follower = attempts[i];
                         let delayVal = follower.delay;
-                        if (delayVal === undefined || leader.timestamp && follower.timestamp) {
-                            delayVal = ((follower.timestamp - leader.timestamp) / 1000).toFixed(2);
-                        }
-                        timelineHtml += `<div class="buzz-track-slave">    ${delayVal}秒差：${follower.name}</div>`;
-                    }
-                    timelineHtml += `</div>`;
-                });
 
+                        // 万が一 delay が未定義だった場合のフォールバック（ミリ秒差から計算）
+                        if (delayVal === undefined && leader.timestamp && follower.timestamp) {
+                            delayVal = parseFloat(((follower.timestamp - leader.timestamp) / 1000).toFixed(3));
+                        }
+                        
+                        // 表示上の小数点桁数を綺麗に整える（例: 0.123秒差）
+                        const displayDelay = typeof delayVal === 'number' ? delayVal.toFixed(3) : delayVal;
+
+                        timelineHtml += `<div class="buzz-track-slave">    ${displayDelay}秒差：${follower.name}</div>`;
+                    }
+                    
+                    timelineHtml += `</div>`;
+                    roundNum++; // 表示上のカウントをプラス
+                });
                 buzzLatencyList.innerHTML = timelineHtml;
             } else {
                 buzzLatencyList.innerHTML = "誰もボタンを押しませんでした。";
