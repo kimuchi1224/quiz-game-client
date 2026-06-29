@@ -31,8 +31,9 @@
         #quiz-number { font-size: 16px; color: var(--primary); text-transform: uppercase; text-align: center; font-weight: bold; margin-bottom: 5px; }
         #quiz-text { font-size: 22px; font-weight: 700; min-height: 100px; padding: 24px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; white-space: pre-wrap; word-break: break-all; text-align: left; line-height: 1.5; font-family: monospace; }
         
-        #buzz-btn { width: 100%; padding: 24px; font-size: 32px; background: linear-gradient(135deg, #ff7875, #ff4d4f); color: white; border: none; border-radius: var(--radius); font-weight: 800; cursor: pointer; }
+        #buzz-btn { width: 100%; padding: 24px; font-size: 32px; background: linear-gradient(135deg, #ff7875, #ff4d4f); color: white; border: none; border-radius: var(--radius); font-weight: 800; cursor: pointer; outline: none; }
         #buzz-btn:disabled { background: #e8e8e8; color: #bfbfbf; cursor: not-allowed; }
+        #buzz-btn:active:not(:disabled) { transform: scale(0.98); }
 
         #answer-input-area { background: #fffbe6; border: 2px solid #ffe58f; padding: 20px; border-radius: 8px; text-align: center; margin-top:20px; }
         #result-view { background: #e6f7ff; border: 1px solid #bae7ff; }
@@ -125,9 +126,9 @@
 
         <div id="quiz-view" class="card hidden">
             <p id="quiz-number">ROUND 1</p>
-            <div id="quiz-text">問題文が流れます...</div>
+            <div id="quiz-text">問題文が流れます...（スペースキーでもBUZZ可能）</div>
             <div id="thinking-timer-display" style="text-align:center; font-weight:bold; color:var(--warning); margin-top:10px; font-size:15px;"></div>
-            <button id="buzz-btn" style="margin-top:15px;">BUZZ!!</button>
+            <button id="buzz-btn" style="margin-top:15px;">BUZZ!! [Space]</button>
 
             <div id="answer-input-area" class="hidden">
                 <div id="buzzer-announcement" style="font-weight:bold; font-size:16px; margin-bottom:10px;"></div>
@@ -192,7 +193,8 @@
 
     let socket = null;
     let isAmIHost = false;
-    let hasIAlreadyBuzzedInThisTurn = false; // 自分がその回にすでに押したかを追跡
+    let hasIAlreadyBuzzedInThisTurn = false;
+    let currentRoomStatus = 'LOBBY'; // 現在のルームステータスを保持
 
     const toastArea = document.getElementById('toast-area');
     const welcomeView = document.getElementById('welcome-view');
@@ -248,6 +250,7 @@
 
         socket.on('room-update', (state) => {
             isAmIHost = socket.id === state.hostId;
+            currentRoomStatus = state.status; // ステータスを同期
 
             if (!isAmIHost && state.config) {
                 if (document.getElementById('genre')) document.getElementById('genre').value = state.config.genre || "一般";
@@ -324,9 +327,8 @@
                 if (state.isDisqualified[socket.id]) { buzzBtn.disabled = true; buzzBtn.innerText = "💀 失格中"; }
                 else if (myWrongCount >= state.config.wrongLimit) { buzzBtn.disabled = true; buzzBtn.innerText = "❌ お手つき制限"; }
                 else if (!hasIAlreadyBuzzedInThisTurn) { 
-                    // ★ 修正箇所: 自分がまだ押していなければ、誰かが早押しした後でも1秒間はボタンが活性化したままになる
                     buzzBtn.disabled = false; 
-                    buzzBtn.innerText = "BUZZ!!"; 
+                    buzzBtn.innerText = "BUZZ!! [Space]"; 
                 }
             }
 
@@ -350,8 +352,8 @@
         socket.on('quiz-start', (data) => {
             hideToast();
             document.getElementById('quiz-number').innerText = `ROUND ${data.index + 1}`;
-            buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!!";
-            hasIAlreadyBuzzedInThisTurn = false; // 新しい問題でフラグをリセット
+            buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!! [Space]";
+            hasIAlreadyBuzzedInThisTurn = false; 
             answerInputArea.classList.add('hidden'); answerField.value = ""; thinkingTimerDisplay.innerText = "";
             confirmBtn.disabled = false; confirmBtn.innerText = "確認（次へ）"; confirmStatus.innerText = "";
             quizText.innerText = ""; quizFullQuestion.innerText = ""; answersLogList.innerHTML = ""; buzzLatencyList.innerHTML = "";
@@ -364,8 +366,6 @@
             thinkingTimerDisplay.innerText = "";
             answerInputArea.classList.remove('hidden');
             
-            // ★ 修正箇所: 誰かがBUZZしたイベントが来ても、即座にボタンをdisableにせず「1000ms（1秒）」のタイマーをかける
-            // これにより、サーバー側の1秒間猶予ウィンドウをフロントエンド側でも開いたままにできる
             setTimeout(() => {
                 buzzBtn.disabled = true;
                 if (!hasIAlreadyBuzzedInThisTurn) buzzBtn.innerText = "🛑 受付終了";
@@ -385,7 +385,7 @@
             triggerJudgmentEffect(false); 
             answerInputArea.classList.add('hidden'); 
             answerField.value = ""; 
-            hasIAlreadyBuzzedInThisTurn = false; // クイズ続行用に、次のBUZZターンのフラグをリセット
+            hasIAlreadyBuzzedInThisTurn = false; 
         });
 
         socket.on('quiz-round-result', (data) => {
@@ -504,19 +504,36 @@
 
     startBtn.onclick = () => socket.emit('game-start');
     
-    // ★ 修正箇所: 自分がボタンを押した瞬間の処理
-    buzzBtn.onclick = () => {
-        hasIAlreadyBuzzedInThisTurn = true; // このターンはもう押したという個人フラグ
-        buzzBtn.disabled = true;            // 自分の画面では連打を防ぐために即disable化
+    // BUZZ発火処理を共通化
+    function handleBuzzAction() {
+        if (buzzBtn.disabled) return;
+        hasIAlreadyBuzzedInThisTurn = true; 
+        buzzBtn.disabled = true;            
         buzzBtn.innerText = "BUZZ済";
         socket.emit('buzz');
-    };
+    }
+
+    buzzBtn.onclick = handleBuzzAction;
 
     confirmBtn.onclick = () => { socket.emit('confirm-next'); confirmBtn.disabled = true; confirmBtn.innerText = "待機中..."; };
     returnLobbyBtn.onclick = () => { if(isAmIHost) socket.emit('host-control', { action: 'return-to-lobby' }); };
 
     const sendAnswer = () => { if (answerField.disabled) return; socket.emit('submit-answer', answerField.value); answerField.disabled = true; submitBtn.disabled = true; };
     submitBtn.onclick = sendAnswer; answerField.onkeydown = (e) => { if(e.key === 'Enter') sendAnswer(); };
+
+    // ★ 修正・追加箇所: キーボード（スペースキー）のグローバル監視
+    window.addEventListener('keydown', (e) => {
+        // スペースキーが押された、かつクイズ出題中画面 (`QUIZ_TEXT`) の時のみ発火
+        if (e.code === 'Space' && currentRoomStatus === 'QUIZ_TEXT') {
+            // アクティブな要素が、文字入力フィールド（ニックネームや解答欄）の時は誤爆防止のため無視
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) {
+                return;
+            }
+            // スクロールなどのデフォルト挙動を抑制し、BUZZを実行
+            e.preventDefault();
+            handleBuzzAction();
+        }
+    });
 </script>
 </body>
 </html>
