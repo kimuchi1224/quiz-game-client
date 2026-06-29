@@ -57,12 +57,11 @@
         #judgment-mark { font-size: 140px; font-weight: 900; }
         @keyframes judgmentAnim { 0% { opacity: 0; transform: scale(0.3); } 15% { opacity: 1; transform: scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; } }
 
-        /* タイライン表示用のスタイル調整 */
         .buzz-timeline { background: #fafafa; border: 1px dashed #ccc; padding: 14px; border-radius: 6px; margin-top: 10px; font-size: 14px; font-family: monospace; line-height: 1.6; }
-        .buzz-round-block { margin-bottom: 12px; }
-        .buzz-round-block:last-child { margin-bottom: 0; }
+        .buzz-round-block { margin-bottom: 12px; border-bottom: 1px dashed #e8e8e8; padding-bottom: 8px; }
+        .buzz-round-block:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
         .buzz-track-master { font-weight: bold; color: var(--primary); }
-        .buzz-track-slave { padding-left: 20px; color: #555; }
+        .buzz-track-slave { padding-left: 20px; color: #555; white-space: pre; }
     </style>
 </head>
 <body>
@@ -381,36 +380,51 @@
             document.getElementById('correct-ans').innerText = data.correctAnswer;
             document.getElementById('quiz-exp').innerText = data.explanation;
 
-            /* ★ 修正箇所: 1問の中で誤答が発生し複数回BUZZが発生した場合でも、回数(ターン)ごとにコンマ秒差を綺麗に構造化表示する */
+            /* ★ 修正・強化箇所: バックエンドの変数に依存せず、時系列ログから自動で何回目のBUZZかを判別・構造化する */
             if (data.buzzLog && data.buzzLog.length > 0) {
-                // 1. 各データをBUZZの回数(ターン)ごとにグループ分けする
-                // バックエンドから送られてくるデータの `buzzRound` または `attempt` プロパティを参照。無ければ一律1回目とする
-                const groupedAttempts = {};
-                data.buzzLog.forEach(b => {
-                    const roundNum = b.buzzRound || b.attempt || 1;
-                    if (!groupedAttempts[roundNum]) {
-                        groupedAttempts[roundNum] = [];
+                const groupedAttempts = [];
+                let currentAttempt = [];
+                let lastTimestamp = 0;
+
+                // サーバーから送られてくるフラットな全早押しログ（時系列順）をループ
+                data.buzzLog.forEach((b) => {
+                    // もしタイムスタンプ（ミリ秒）が存在する場合の処理
+                    const currentTimestamp = b.timestamp || 0;
+
+                    // 【自動仕分けロジック】
+                    // 1つ前のログよりタイムスタンプが「過去」に戻っている、
+                    // またはタッチの秒差プロパティ(delay)が0（＝その回の最速者）の時、または前回のBUZZから1秒以上開いている場合は
+                    // 「クイズが再開された後の次の新しいBUZZターン（2回目など）」と自動判定する
+                    if (currentAttempt.length > 0 && (b.delay === 0 || b.delay === "0.00" || (currentTimestamp > 0 && currentTimestamp < lastTimestamp) || (currentTimestamp - lastTimestamp > 1200))) {
+                        groupedAttempts.push(currentAttempt);
+                        currentAttempt = [];
                     }
-                    groupedAttempts[roundNum].push(b);
+
+                    currentAttempt.push(b);
+                    if (currentTimestamp > 0) lastTimestamp = currentTimestamp;
                 });
+                if (currentAttempt.length > 0) {
+                    groupedAttempts.push(currentAttempt);
+                }
 
-                // 2. 分割したグループごとにHTMLを組み立てていく
+                // 指示されたレイアウト通りにHTML文字列を生成
                 let timelineHtml = "";
-                Object.keys(groupedAttempts).sort((a, b) => a - b).forEach(roundNum => {
-                    const attempts = groupedAttempts[roundNum];
-                    if (attempts.length === 0) return;
-
-                    timelineHtml += `<div class="buzz-round-block">`;
-                    // 各BUZZターンの中での「最速タッチプレイヤー」を先頭に据える
+                groupedAttempts.forEach((attempts, index) => {
+                    const roundNum = index + 1;
                     const leader = attempts[0];
+                    
+                    timelineHtml += `<div class="buzz-round-block">`;
                     timelineHtml += `<div class="buzz-track-master">${roundNum}回目 最速BUZZ：${leader.name}</div>`;
 
-                    // 同じターンにミリ秒の差でボタンを押していた後続プレイヤーを計算・表示
+                    // 同一ターン内でのコンマ秒差の追随者を表示
                     for (let i = 1; i < attempts.length; i++) {
                         const follower = attempts[i];
-                        // タイムスタンプや遅延差(delay)を適用。未計算の場合は相手との相対差をフォールバック算出
-                        let delayText = follower.delay !== undefined ? follower.delay : ((follower.timestamp - leader.timestamp) / 1000).toFixed(2);
-                        timelineHtml += `<div class="buzz-track-slave">   +${delayText}秒差：${follower.name}</div>`;
+                        let delayVal = follower.delay;
+                        // delayプロパティが不正、もしくは1巡目の最速者を基準にしてしまっている場合は、このターンのリーダーとの差を動的算出
+                        if (delayVal === undefined || leader.timestamp && follower.timestamp) {
+                            delayVal = ((follower.timestamp - leader.timestamp) / 1000).toFixed(2);
+                        }
+                        timelineHtml += `<div class="buzz-track-slave">    ${delayVal}秒差：${follower.name}</div>`;
                     }
                     timelineHtml += `</div>`;
                 });
