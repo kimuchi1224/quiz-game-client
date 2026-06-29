@@ -128,7 +128,7 @@
             <p id="quiz-number">ROUND 1</p>
             <div id="quiz-text">問題文が流れます...（スペースキーでもBUZZ可能）</div>
             <div id="thinking-timer-display" style="text-align:center; font-weight:bold; color:var(--warning); margin-top:10px; font-size:15px;"></div>
-            <button id="buzz-btn" style="margin-top:15px;">BUZZ!! [Space]</button>
+            <button id="buzz-btn" style="margin-top:15px;">BUZZ!!</button>
 
             <div id="answer-input-area" class="hidden">
                 <div id="buzzer-announcement" style="font-weight:bold; font-size:16px; margin-bottom:10px;"></div>
@@ -148,7 +148,7 @@
             </div>
             
             <div style="background:#fff7e6; padding:12px; border:1px solid #ffd591; border-radius:6px; margin-bottom:15px;">
-                <strong>⏱️ 早押しコンマ秒差タイマー（ミリ秒集計）:</strong>
+                <strong>⏱️ 早押しタイム差:</strong>
                 <div id="buzz-latency-list" class="buzz-timeline"></div>
             </div>
 
@@ -157,7 +157,7 @@
                 <strong>解説:</strong> <span id="quiz-exp"></span>
             </div>
             <div style="background:#f5f5f5; padding:15px; border-radius:8px; margin-bottom:15px;">
-                <strong style="font-size:14px; color:#595959;">解答履歴・ホスト判定調整:</strong>
+                <strong style="font-size:14px; color:#595959;">解答履歴:</strong>
                 <ul id="answers-log-list" class="log-list"></ul>
             </div>
             <button id="confirm-btn" class="btn btn-primary">確認しました（次へ進む）</button>
@@ -172,7 +172,7 @@
                 <thead><tr style="background:#f0f2f5;"><th>順位</th><th>プレイヤー</th><th>最終得点</th></tr></thead>
                 <tbody id="final-rank-tbody"></tbody>
             </table>
-            <button id="return-lobby-btn" class="btn btn-warning hidden" style="max-width:280px; margin:24px auto 0 auto; font-size:16px; font-weight:bold;">ロビー（待機部屋）に戻る 🔄</button>
+            <button id="return-lobby-btn" class="btn btn-warning hidden" style="max-width:280px; margin:24px auto 0 auto; font-size:16px; font-weight:bold;">ロビーに戻る 🔄</button>
         </div>
 
         <div class="card">
@@ -328,7 +328,7 @@
                 else if (myWrongCount >= state.config.wrongLimit) { buzzBtn.disabled = true; buzzBtn.innerText = "❌ お手つき制限"; }
                 else if (!hasIAlreadyBuzzedInThisTurn) { 
                     buzzBtn.disabled = false; 
-                    buzzBtn.innerText = "BUZZ!! [Space]"; 
+                    buzzBtn.innerText = "BUZZ!!"; 
                 }
             }
 
@@ -352,7 +352,7 @@
         socket.on('quiz-start', (data) => {
             hideToast();
             document.getElementById('quiz-number').innerText = `ROUND ${data.index + 1}`;
-            buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!! [Space]";
+            buzzBtn.disabled = false; buzzBtn.innerText = "BUZZ!!";
             hasIAlreadyBuzzedInThisTurn = false; 
             answerInputArea.classList.add('hidden'); answerField.value = ""; thinkingTimerDisplay.innerText = "";
             confirmBtn.disabled = false; confirmBtn.innerText = "確認（次へ）"; confirmStatus.innerText = "";
@@ -445,7 +445,7 @@
                         // 表示上の小数点桁数を綺麗に整える（例: 0.123秒差）
                         const displayDelay = typeof delayVal === 'number' ? delayVal.toFixed(3) : delayVal;
 
-                        timelineHtml += `<div class="buzz-track-slave">    ${displayDelay}秒差：${follower.name}</div>`;
+                        timelineHtml += `<div class="buzz-track-slave">  ${displayDelay}秒差：${follower.name}</div>`;
                     }
                     
                     timelineHtml += `</div>`;
