@@ -535,6 +535,7 @@
 
     const sendAnswer = () => { if (answerField.disabled) return; socket.emit('submit-answer', answerField.value); answerField.disabled = true; submitBtn.disabled = true; };
     submitBtn.onclick = sendAnswer; answerField.onkeydown = (e) => { if(e.key === 'Enter') sendAnswer(); };
+    answerField.disabled = false;
 
     // ★ 修正・追加箇所: キーボード（スペースキー）のグローバル監視
     window.addEventListener('keydown', (e) => {
